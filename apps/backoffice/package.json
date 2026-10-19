@@ -8,7 +8,7 @@
     "start": "next start -p 3001",
     "typecheck": "tsc --noEmit -p .",
     "lint": "eslint .",
-    "test:unit": "node --import tsx --test src/lib/payments/*.test.ts src/lib/notifications/*.test.ts"
+    "test:unit": "node --import tsx --test src/lib/payments/*.test.ts src/lib/notifications/*.test.ts src/lib/site-image.test.ts"
   },
   "dependencies": {
     "@pt/shared": "*",

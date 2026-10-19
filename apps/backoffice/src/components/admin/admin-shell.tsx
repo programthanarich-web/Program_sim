@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: "/admin/discounts", label: "ส่วนลด" },
   { href: "/admin/payment-settings", label: "ค่ารับเงิน" },
   { href: "/admin/notifications", label: "การแจ้งเตือน" },
+  { href: "/admin/site", label: "หน้าเว็บ" },
 ];
 
 /** โครงหน้า admin: ตรวจสิทธิ์ฝั่ง server ก่อนแสดงเนื้อหา */

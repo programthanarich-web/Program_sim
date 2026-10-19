@@ -27,6 +27,27 @@ export const serverEnv = {
   },
 };
 
+/**
+ * การซิงค์เนื้อหาหน้าบ้านผ่าน GitHub (ความลับทั้งหมดอยู่ฝั่ง server)
+ * token ต้องมีสิทธิ์ Contents: read & write เฉพาะ repo นี้เท่านั้น
+ */
+export const githubContentEnv = {
+  get token() {
+    return optionalEnv("GITHUB_CONTENT_TOKEN");
+  },
+  /** รูปแบบ owner/repo */
+  get repo() {
+    return optionalEnv("GITHUB_CONTENT_REPO");
+  },
+  get branch() {
+    return optionalEnv("GITHUB_CONTENT_BRANCH") ?? "main";
+  },
+  /** โฟลเดอร์แอปหน้าบ้านใน repo เช่น apps/storefront */
+  get prefix() {
+    return optionalEnv("GITHUB_CONTENT_PREFIX") ?? "apps/storefront";
+  },
+};
+
 function optionalEnv(name: string): string | undefined {
   const value = process.env[name]?.trim();
   return value ? value : undefined;
