@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+/* ฟอนต์ภาษาไทยใช้ฟอนต์ของระบบเป็นหลัก เพื่อไม่ต้องดาวน์โหลดฟอนต์ตอน build */
+@theme {
+  --font-sans:
+    "Noto Sans Thai", "Sarabun", "Kanit", "Sukhumvit Set", "Thonburi", "Tahoma",
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+body {
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: var(--font-sans);
+}

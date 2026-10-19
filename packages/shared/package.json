@@ -1,0 +1,18 @@
+{
+  "name": "@pt/shared",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./ui/*": "./src/ui/*.tsx",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p .",
+    "test:unit": "node --import tsx --test src/phone.test.ts src/payments/slip-file.test.ts"
+  },
+  "peerDependencies": {
+    "react": "^19",
+    "react-dom": "^19"
+  }
+}
