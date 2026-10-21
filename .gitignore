@@ -42,3 +42,6 @@ next-env.d.ts
 
 # ยกเว้นไฟล์ตัวอย่างสำหรับ commit ได้
 !.env.example
+
+.open-next
+.wrangler
