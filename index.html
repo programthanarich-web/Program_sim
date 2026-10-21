@@ -1,271 +1,487 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
-<title>Telegram SIM Extractor</title>
+<meta charset="utf-8">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>ProgramThanarich</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:linear-gradient(160deg,#0a0a1a,#0f172a,#1a0a2e);min-height:100vh;font-family:"Noto Sans Thai",Sarabun,sans-serif;color:white}
-::-webkit-scrollbar{width:4px}
-::-webkit-scrollbar-thumb{background:rgba(167,139,250,0.3);border-radius:2px}
-@keyframes spin{to{transform:rotate(360deg)}}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-@keyframes slideIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
-.spin{animation:spin 1s linear infinite}
-.pulse{animation:pulse 1.5s ease-in-out infinite}
+:root {
+  --bg: #f2f6fc; --surface: #ffffff; --fg: #13213d; --muted: #5b6983; --line: #dde5f1;
+  --brand: #0f5fd6; --brand-dark: #0a4aae; --navy: #0b2550; --yellow: #ffd23f; --red: #e5252a;
+  --ok-bg: #e6f6ec; --ok: #1a7a3a; --bad-bg: #fde8e8; --bad: #c81e24; --warn-bg: #fff4dc; --warn: #8a5300;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1322; --surface: #142038; --fg: #e8eefb; --muted: #9db0cf; --line: #263454;
+    --brand: #6aa6ff; --brand-dark: #4d8be6; --navy: #06142e; --ok-bg: #163024; --ok: #6fd39c;
+    --bad-bg: #3a1719; --bad: #ff8a8f; --warn-bg: #382b14; --warn: #f0c070; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b1322; --surface: #142038; --fg: #e8eefb; --muted: #9db0cf; --line: #263454;
+  --brand: #6aa6ff; --brand-dark: #4d8be6; --navy: #06142e; --ok-bg: #163024; --ok: #6fd39c;
+  --bad-bg: #3a1719; --bad: #ff8a8f; --warn-bg: #382b14; --warn: #f0c070; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); }
+body { color: var(--fg); font-size: 15px; line-height: 1.5; overflow-x: hidden; font-family: "Sarabun", "Noto Sans Thai", "Helvetica Neue", Arial, sans-serif; }
+button, input { font: inherit; }
+button { cursor: pointer; }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+h1, h2, h3 { margin: 0; line-height: 1.3; }
+p { margin: 0; }
+img { display: block; max-width: 100%; }
+.wrap { max-width: 430px; margin: 0 auto; min-height: 100vh; background: var(--bg); overflow-x: hidden; }
+.hidden { display: none !important; }
+
+.hdr { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 14px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.logo { display: flex; gap: 8px; align-items: center; background: none; border: 0; padding: 0; color: inherit; text-align: left; min-width: 0; }
+.logo-img { width: 30px; height: 36px; object-fit: contain; flex: 0 0 auto; }
+.logo-name { font-weight: 800; font-size: 17px; color: var(--brand); white-space: nowrap; }
+.tag { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.hdr-actions { display: flex; gap: 8px; flex: 0 0 auto; }
+.icon-btn { width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); display: grid; place-items: center; padding: 0; }
+.menu { background: var(--surface); border-bottom: 1px solid var(--line); padding: 4px 14px 14px; display: grid; }
+.menu button { text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); padding: 11px 4px; color: var(--fg); font-size: 15px; }
+.menu .cta { background: var(--brand); color: #fff; border-radius: 10px; margin-top: 10px; text-align: center; border: 0; font-weight: 700; }
+
+.hero { position: relative; overflow: hidden; color: #fff; padding: 22px 16px 18px; background: linear-gradient(125deg, #0a3a9e 0%, #1464e0 52%, #3aa7ff 100%); }
+.hero-row { display: flex; gap: 10px; align-items: center; }
+.hero-text { flex: 1; min-width: 0; }
+.hero h1 { font-size: 28px; font-weight: 800; }
+.hero .hl { display: block; color: var(--yellow); font-size: 25px; font-weight: 800; line-height: 1.25; }
+.hero .by { font-size: 17px; font-weight: 700; margin-top: 6px; }
+.hero .feat { font-size: 12.5px; margin-top: 8px; opacity: .95; }
+.phone { flex: 0 0 92px; height: 146px; border-radius: 18px; border: 3px solid #0b1f4f; background: linear-gradient(170deg, #0b1f4f, #2d7bff); box-shadow: 0 10px 28px rgba(0,0,0,.35); display: grid; place-items: center; font-size: 34px; font-weight: 900; transform: rotate(7deg); margin-right: -4px; }
+.hero-photo { flex: 0 0 110px; width: 110px; height: 146px; object-fit: cover; border-radius: 16px; border: 3px solid rgba(255,255,255,.7); transform: rotate(4deg); margin-right: -4px; }
+.chips { display: flex; gap: 6px; margin-top: 14px; flex-wrap: wrap; }
+.chip-carrier { background: #fff; color: #0b2550; border-radius: 8px; padding: 4px 9px; font-size: 12px; font-weight: 800; }
+.perks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; font-size: 11.5px; }
+.perk { display: flex; gap: 6px; align-items: flex-start; min-width: 0; }
+.perk .ring { flex: 0 0 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,.2); display: grid; place-items: center; }
+.perk b { display: block; font-size: 12.5px; }
+
+.card { margin: 14px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; box-shadow: 0 8px 22px rgba(15,40,90,.07); min-width: 0; }
+.card-head { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
+.card h2 { font-size: 17px; font-weight: 800; }
+.muted { color: var(--muted); font-size: 13px; }
+.stack { display: grid; gap: 10px; }
+.label { font-size: 13px; font-weight: 700; color: var(--muted); display: grid; gap: 6px; }
+.field { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 12px; padding: 0 12px; height: 50px; background: var(--bg); }
+.field:focus-within { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(15,95,214,.15); }
+.field input { border: 0; outline: 0; background: transparent; color: var(--fg); font-size: 17px; width: 100%; min-width: 0; height: 100%; }
+.field svg { flex: 0 0 auto; color: var(--brand); }
+.how { font-size: 13.5px; color: var(--muted); background: var(--bg); border-radius: 12px; padding: 10px 12px; }
+.how b { color: var(--fg); }
+.btn-primary { height: 52px; width: 100%; border: 0; border-radius: 12px; background: var(--brand); color: #fff; font-weight: 800; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-primary:hover { background: var(--brand-dark); }
+.ok-line { background: var(--ok-bg); color: var(--ok); border-radius: 10px; padding: 9px 12px; font-size: 13.5px; font-weight: 700; }
+.err { background: var(--bad-bg); color: var(--bad); border-radius: 10px; padding: 9px 12px; font-size: 13.5px; font-weight: 600; }
+.notice-top { margin: 12px 16px 0; padding: 10px 12px; border-radius: 12px; background: var(--ok-bg); color: var(--ok); font-weight: 700; font-size: 14px; }
+.notice-top.bad { background: var(--bad-bg); color: var(--bad); }
+
+.bgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 10px; margin-top: 6px; }
+.bitem { display: grid; justify-items: center; gap: 4px; text-align: center; }
+.bcircle { width: 52px; height: 52px; border-radius: 50%; background: #e8f1ff; color: var(--brand); display: grid; place-items: center; }
+.bitem b { font-size: 14px; }
+.bitem span { font-size: 12px; color: var(--muted); }
+.promo { margin: 14px 16px 0; border-radius: 16px; padding: 16px; color: #fff; display: flex; justify-content: space-between; align-items: center; gap: 10px; background: linear-gradient(120deg, #1a6fe8, #4fb4ff); overflow: hidden; }
+.promo-img { width: 100%; height: 150px; object-fit: cover; border-radius: 0; margin: -16px -16px 12px; width: calc(100% + 32px); }
+.promo b { font-size: 17px; display: block; }
+.promo span { font-size: 12.5px; opacity: .95; }
+.promo .slogan { font-weight: 800; font-size: 15px; text-align: right; }
+.promo-col { display: block; }
+
+.sec-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; padding: 0 16px; margin-top: 20px; }
+.sec-head h2 { font-size: 19px; font-weight: 800; display: flex; gap: 8px; align-items: center; }
+.link-btn { background: none; border: 0; color: var(--brand); font-weight: 700; font-size: 13px; padding: 0; white-space: nowrap; }
+.pkgs { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 10px 16px 14px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.pkgs::-webkit-scrollbar { display: none; }
+.pkg-wrap { flex: 0 0 200px; scroll-snap-align: start; position: relative; padding-top: 14px; }
+.badge { position: absolute; top: 0; left: 10px; z-index: 1; background: var(--red); color: #fff; font-size: 11.5px; font-weight: 800; border-radius: 6px; padding: 3px 9px; }
+.pkg { height: 100%; display: flex; flex-direction: column; background: var(--surface); border: 2px solid var(--c); border-radius: 16px; overflow: hidden; }
+.pk-head { background: var(--c); color: #fff; padding: 12px 14px; }
+.pk-top { padding: 12px 14px 0; }
+.pk-spd { font-size: 26px; font-weight: 900; line-height: 1.1; }
+.pk-perk { font-size: 12.5px; font-weight: 600; margin-top: 2px; }
+.pk-top .pk-spd, .pk-top .pk-perk { color: var(--c); }
+.pk-price { padding: 10px 14px 0; font-size: 26px; font-weight: 900; color: var(--c); line-height: 1.1; }
+.pk-price small { font-size: 12px; font-weight: 700; }
+.pk-feats { list-style: none; margin: 10px 0 0; padding: 0 14px; display: grid; gap: 6px; font-size: 12.5px; }
+.pk-feats li { display: flex; gap: 6px; align-items: center; }
+.pk-feats svg { flex: 0 0 auto; color: var(--c); }
+.pk-btn { margin: auto 14px 14px; height: 42px; border: 0; border-radius: 10px; background: var(--c); color: #fff; font-weight: 800; font-size: 14px; }
+
+.ftr { margin-top: 22px; background: var(--navy); color: #dbe6ff; padding: 20px 16px 26px; }
+.ftr .logo-name { color: #fff; }
+.ftr .tag { color: #b8c8e8; }
+.ftr-links { display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: 13px; margin: 16px 0; }
+.ftr-links button { background: none; border: 0; color: #dbe6ff; padding: 0; }
+.soc { display: flex; gap: 10px; align-items: center; }
+.soc span { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,.14); display: grid; place-items: center; font-size: 11px; font-weight: 800; color: #fff; }
+.line-btn { margin-top: 14px; height: 44px; border: 0; border-radius: 12px; background: #06c755; color: #fff; font-weight: 800; padding: 0 18px; }
+.copy { font-size: 12px; color: #9fb3d6; margin-top: 16px; line-height: 1.6; }
+
+.row { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 8px 0 0; font-size: 14px; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.pill { display: inline-block; border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.t-warn { background: var(--warn-bg); color: var(--warn); }
+.t-info { background: #e0f0fb; color: #0d5f85; }
+.t-ok { background: var(--ok-bg); color: var(--ok); }
+.t-bad { background: var(--bad-bg); color: var(--bad); }
+.t-muted { background: var(--line); color: var(--muted); }
+.qr { width: 150px; height: 150px; margin: 12px auto; border: 1px dashed var(--muted); border-radius: 12px; display: grid; place-items: center; color: var(--muted); font-size: 13px; text-align: center; }
+.order-link { display: grid; gap: 8px; text-align: left; width: calc(100% - 32px); color: var(--fg); cursor: pointer; }
+.back { margin: 14px 16px 0; background: none; border: 0; color: var(--brand); font-weight: 700; padding: 0; }
+input[type=file] { font-size: 14px; }
 </style>
-</head>
-<body>
-<div id="root"></div>
-<script>
-const LS={
-  get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},
-  set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},
-};
 
-// ── Telegram API ──────────────────────────────────────────────
-const tgGet=(bot,offset)=>
-  fetch(`https://api.telegram.org/bot${bot}/getUpdates?timeout=0&offset=${offset}`)
-  .then(r=>r.json());
-
-// ── Parse serial from Telegram message text ───────────────────
-const PATTERNS=[
-  /เลขซีเรียลซิม[:\s]*([0-9]{10,22})/,
-  /serial[:\s]+([0-9]{10,22})/i,
-  /s=([0-9]{10,22})/,
-  /📋[^\n]*?([0-9]{15,22})/,
-];
-const PHONE_PAT=/เบอร์โทร[:\s]*([0-9]{9,10})/;
-const TRACK_PAT=/เลขติดตาม[:\s]*([A-Z0-9]+)/;
-const TIME_PAT=/เวลา[:\s]*([^\n✅]+)/;
-
-function parseMsg(text){
-  let serial=null;
-  for(const p of PATTERNS){const m=text.match(p);if(m){serial=m[1].trim();break;}}
-  const phone=(text.match(PHONE_PAT)||[])[1]||null;
-  const tracking=(text.match(TRACK_PAT)||[])[1]||null;
-  const time=(text.match(TIME_PAT)||[])[1]?.trim()||null;
-  return{serial,phone,tracking,time};
-}
-
-// ── State ─────────────────────────────────────────────────────
-const state={
-  bot:LS.get("tg_bot")||"",
-  chat:LS.get("tg_chat")||"",
-  offset:parseInt(LS.get("tg_offset")||"0"),
-  polling:false,
-  status:"idle",// idle | polling | error
-  logs:[],// [{id,ts,text,serial,phone,tracking,time,raw}]
-  intervalId:null,
-  pollInterval:10,// วินาที
-};
-
-// ── Render ─────────────────────────────────────────────────────
-function $(id){return document.getElementById(id);}
-
-function render(){
-  const root=document.getElementById("root");
-  root.innerHTML=`
-  <div style="max-width:600px;margin:0 auto;padding:0 0 80px">
-
-    <!-- Header -->
-    <div style="background:rgba(15,15,40,0.95);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.08);padding:14px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100">
-      <div style="width:42px;height:42px;background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">📡</div>
-      <div style="flex:1">
-        <div style="font-weight:800;font-size:16px">Telegram SIM Extractor</div>
-        <div style="font-size:11px;color:#8b8fa8;display:flex;align-items:center;gap:6px;margin-top:2px">
-          <span id="status-dot" style="width:7px;height:7px;border-radius:50%;background:${state.status==="polling"?"#6ee7b7":state.status==="error"?"#f87171":"#64748b"};display:inline-block;${state.status==="polling"?"box-shadow:0 0 6px #6ee7b7":""}"></span>
-          <span id="status-text">${state.status==="polling"?"กำลัง Polling ทุก "+state.pollInterval+" วิ...":state.status==="error"?"เกิดข้อผิดพลาด":"ยังไม่ได้เริ่ม"}</span>
-        </div>
-      </div>
-      <div style="text-align:right">
-        <div style="color:#a78bfa;font-weight:800;font-size:22px">${state.logs.length}</div>
-        <div style="color:#8b8fa8;font-size:10px">ข้อความ</div>
-      </div>
-    </div>
-
-    <!-- Settings -->
-    <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:16px;margin:14px 12px 0">
-      <div style="font-size:13px;font-weight:700;color:#e2e8f0;margin-bottom:12px">⚙️ ตั้งค่า Telegram Bot</div>
-      <div style="margin-bottom:10px">
-        <div style="font-size:11px;color:#94a3b8;margin-bottom:5px">Bot Token</div>
-        <input id="inp-bot" type="text" value="${state.bot}" placeholder="110201543:AAHdqTcvCH1vGWJxfSeofSas0K5PALDsaw"
-          style="width:100%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:10px 14px;color:white;font-size:13px;outline:none;font-family:monospace"/>
-      </div>
-      <div style="margin-bottom:14px">
-        <div style="font-size:11px;color:#94a3b8;margin-bottom:5px">Chat ID (ที่รับข้อความแจ้งเตือน)</div>
-        <input id="inp-chat" type="text" value="${state.chat}" placeholder="-1001234567890"
-          style="width:100%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:10px 14px;color:white;font-size:13px;outline:none;font-family:monospace"/>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
-        <div style="font-size:11px;color:#94a3b8">ดึงข้อมูลทุก</div>
-        ${[5,10,15,30].map(v=>`<button onclick="setInterval(${v})"
-          style="padding:6px 14px;border:none;border-radius:8px;cursor:pointer;font-family:inherit;font-weight:700;font-size:12px;
-          background:${state.pollInterval===v?"linear-gradient(135deg,#4f46e5,#7c3aed)":"rgba(255,255,255,0.08)"};
-          color:${state.pollInterval===v?"white":"#8b8fa8"}">${v}วิ</button>`).join("")}
-      </div>
-      <div style="display:flex;gap:8px">
-        <button onclick="saveAndStart()"
-          style="flex:1;padding:11px;border:none;border-radius:10px;background:linear-gradient(135deg,#22c55e,#16a34a);color:white;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit">
-          ${state.polling?"🔴 หยุด Polling":"▶️ เริ่ม Polling"}
-        </button>
-        <button onclick="clearLogs()"
-          style="padding:11px 16px;border:1px solid rgba(239,68,68,0.3);border-radius:10px;background:rgba(239,68,68,0.12);color:#f87171;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit">
-          🗑 ล้าง
-        </button>
-      </div>
-    </div>
-
-    <!-- Live Feed -->
-    <div style="margin:14px 12px 0">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-        <div style="font-size:13px;font-weight:700;color:#e2e8f0">📥 ข้อความที่รับได้</div>
-        ${state.polling?`<div class="pulse" style="font-size:11px;color:#6ee7b7;background:rgba(5,150,105,0.15);border:1px solid rgba(5,150,105,0.3);padding:2px 10px;border-radius:99px">🔴 LIVE</div>`:""}
-      </div>
-
-      ${state.logs.length===0?`
-      <div style="text-align:center;padding:48px 16px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:16px;color:#475569">
-        <div style="font-size:40px;margin-bottom:10px">📭</div>
-        <div style="font-size:14px;color:#64748b">${state.polling?"กำลังรอข้อความจาก Telegram Bot...":"กรอก Bot Token แล้วกด เริ่ม Polling"}</div>
-      </div>`:
-      state.logs.map((log,i)=>`
-      <div style="background:${log.serial?"rgba(5,150,105,0.08)":"rgba(255,255,255,0.04)"};border:1px solid ${log.serial?"rgba(5,150,105,0.3)":"rgba(255,255,255,0.08)"};border-radius:14px;padding:14px;margin-bottom:10px;animation:slideIn 0.3s ease">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:${log.serial?10:0}">
-          <div style="font-size:11px;color:#64748b">${log.ts}</div>
-          ${log.serial?`<span style="background:#065f46;color:#6ee7b7;font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;flex-shrink:0">✅ มี Serial</span>`:`<span style="background:rgba(100,116,139,0.2);color:#94a3b8;font-size:10px;padding:2px 8px;border-radius:99px;flex-shrink:0">ข้อความทั่วไป</span>`}
-        </div>
-        ${log.serial?`
-        <div style="background:rgba(0,0,0,0.3);border-radius:10px;padding:10px 12px;margin-bottom:8px">
-          <div style="font-size:10px;color:#94a3b8;margin-bottom:4px">📋 เลขซีเรียลซิม</div>
-          <div style="font-family:monospace;font-size:16px;font-weight:800;color:#6ee7b7;letter-spacing:1px">${log.serial}</div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-          ${log.phone?`<div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px 10px"><div style="font-size:10px;color:#94a3b8">📞 เบอร์โทร</div><div style="font-size:13px;font-weight:700;color:#a5b4fc;margin-top:2px">${log.phone}</div></div>`:""}
-          ${log.tracking?`<div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px 10px"><div style="font-size:10px;color:#94a3b8">🔢 เลขติดตาม</div><div style="font-size:13px;font-weight:700;color:#fbbf24;margin-top:2px">${log.tracking}</div></div>`:""}
-        </div>
-        ${log.time?`<div style="font-size:11px;color:#64748b">⏰ ${log.time}</div>`:""}
-        <div style="display:flex;gap:6px;margin-top:10px">
-          <button onclick="copyText('${log.serial}')" style="flex:1;padding:7px;border:1px solid rgba(110,231,183,0.3);border-radius:8px;background:rgba(5,150,105,0.12);color:#6ee7b7;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">📋 คัดลอก Serial</button>
-          ${log.phone?`<button onclick="copyText('${log.phone}')" style="flex:1;padding:7px;border:1px solid rgba(165,180,252,0.3);border-radius:8px;background:rgba(79,70,229,0.12);color:#a5b4fc;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">📞 คัดลอกเบอร์</button>`:""}
-        </div>
-        `:`
-        <div style="font-size:12px;color:#64748b;line-height:1.5;white-space:pre-wrap;max-height:60px;overflow:hidden">${escHtml(log.raw.slice(0,120))}${log.raw.length>120?"...":""}</div>
-        `}
-      </div>
-      `).join("")}
-    </div>
-
-  </div>`;
-
-  // Toast
-  if(state._toast){
-    const t=document.createElement("div");
-    t.innerHTML=state._toast;
-    t.style.cssText="position:fixed;top:20px;right:16px;z-index:9999;background:#059669;color:white;padding:10px 18px;border-radius:12px;font-weight:600;font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,0.4);max-width:280px";
-    document.body.appendChild(t);
-    setTimeout(()=>t.remove(),2500);
-    state._toast=null;
-  }
-}
-
-function escHtml(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
-
-// ── Actions ───────────────────────────────────────────────────
-window.setInterval2=window.setInterval; // keep native
-window.setInterval=(v)=>{
-  state.pollInterval=v;
-  if(state.polling){stopPolling();startPolling();}
-  render();
-};
-
-window.saveAndStart=()=>{
-  state.bot=$("inp-bot").value.trim();
-  state.chat=$("inp-chat").value.trim();
-  LS.set("tg_bot",state.bot);
-  LS.set("tg_chat",state.chat);
-  if(state.polling){stopPolling();}
-  else{
-    if(!state.bot){alert("กรุณากรอก Bot Token ก่อนครับ");return;}
-    startPolling();
-  }
-};
-
-window.clearLogs=()=>{
-  if(state.logs.length&&!confirm("ล้างประวัติทั้งหมด?"))return;
-  state.logs=[];
-  render();
-};
-
-window.copyText=(txt)=>{
-  navigator.clipboard.writeText(txt).then(()=>{
-    state._toast="✅ คัดลอกแล้ว: "+txt;
-    render();
-  });
-};
-
-// ── Polling ───────────────────────────────────────────────────
-async function poll(){
-  if(!state.bot)return;
-  try{
-    const data=await tgGet(state.bot,state.offset);
-    if(!data.ok||!data.result?.length)return;
-    let maxId=state.offset;
-    let changed=false;
-    for(const upd of data.result){
-      if(upd.update_id>=maxId)maxId=upd.update_id+1;
-      const raw=upd.message?.text||upd.channel_post?.text||"";
-      if(!raw)continue;
-      const {serial,phone,tracking,time}=parseMsg(raw);
-      const ts=upd.message?.date||upd.channel_post?.date;
-      const tsStr=ts?new Date(ts*1000).toLocaleString("th-TH"):new Date().toLocaleString("th-TH");
-      state.logs.unshift({id:upd.update_id,ts:tsStr,raw,serial,phone,tracking,time});
-      changed=true;
-    }
-    if(changed){
-      state.logs=state.logs.slice(0,100);// เก็บสูงสุด 100 รายการ
-    }
-    if(maxId!==state.offset){
-      state.offset=maxId;
-      LS.set("tg_offset",String(maxId));
-    }
-    state.status="polling";
-    if(changed)render();
-    else updateStatusOnly();
-  }catch(e){
-    state.status="error";
-    updateStatusOnly();
-  }
-}
-
-function updateStatusOnly(){
-  const dot=$("status-dot");
-  const txt=$("status-text");
-  if(dot)dot.style.background=state.status==="polling"?"#6ee7b7":state.status==="error"?"#f87171":"#64748b";
-  if(txt)txt.textContent=state.status==="polling"?"กำลัง Polling ทุก "+state.pollInterval+" วิ...":state.status==="error"?"เกิดข้อผิดพลาด — ตรวจสอบ Bot Token":"ยังไม่ได้เริ่ม";
-}
-
-function startPolling(){
-  state.polling=true;
-  state.status="polling";
-  poll();
-  state._iv=window.setInterval2(poll,state.pollInterval*1000);
-  render();
-}
-
-function stopPolling(){
-  state.polling=false;
-  state.status="idle";
-  if(state._iv){clearInterval(state._iv);state._iv=null;}
-  render();
-}
-
-// ── Boot ──────────────────────────────────────────────────────
-render();
-if(state.bot){
-  // Auto-start ถ้ามี token บันทึกไว้แล้ว
-  setTimeout(startPolling,500);
+<script id="site-data" type="application/json">
+{
+  "brandName": "ProgramThanarich",
+  "tagline": "เน็ตดี เบอร์สวย ราคาโดนใจ",
+  "logoImage": "",
+  "heroLine1": "สมัครแพ็กเกจเน็ต",
+  "heroLine2": "ง่ายๆ ผ่านเบอร์มือถือ",
+  "heroBy": "กับ ProgramThanarich",
+  "heroText": "เน็ตแรง ครบทุกการใช้งาน ทั้งเล่นโซเชียล ดูหนัง ฟังเพลง ไม่สะดุด",
+  "heroImage": "",
+  "carriers": ["truemove H", "AIS", "dtac"],
+  "perks": [
+    { "title": "สมัครง่าย", "text": "ไม่ต้องเดินทาง" },
+    { "title": "ปลอดภัย", "text": "ข้อมูลส่วนตัวไม่รั่วไหล" },
+    { "title": "มีทีมซัพพอร์ต", "text": "ดูแลตลอดการใช้งาน" }
+  ],
+  "promo": { "title": "ProgramThanarich", "text": "เน็ตดี เบอร์สวย ราคาโดนใจ", "slogan": "เน็ตแรง ทุกที่ ทุกเวลา", "image": "" },
+  "packages": [
+    { "id": "p1", "speed": 30, "perk": "เน็ตไม่อั้น ไม่ลดความเร็ว", "price": 235, "color": "#0f5fd6", "badge": "แนะนำสุดคุ้ม", "feats": ["เน็ตไม่อั้น", "ความเร็ว 30 Mbps", "ไม่มีสัญญา"] },
+    { "id": "p2", "speed": 20, "perk": "เน็ตไม่อั้น ไม่ลดความเร็ว", "price": 230, "color": "#1a8a3e", "badge": "", "feats": ["เน็ตไม่อั้น", "ความเร็ว 20 Mbps", "ไม่มีสัญญา"] },
+    { "id": "p3", "speed": 10, "perk": "เน็ตไม่อั้น ไม่ลดความเร็ว", "price": 300, "color": "#7b2cd1", "badge": "", "feats": ["เน็ตไม่อั้น", "ความเร็ว 10 Mbps", "ไม่มีสัญญา"] },
+    { "id": "p4", "speed": 4, "perk": "เน็ตไม่อั้น", "price": 107, "color": "#ff8a00", "badge": "", "feats": ["เน็ตไม่อั้น", "ความเร็ว 4 Mbps", "ไม่มีสัญญา"] },
+    { "id": "p5", "speed": 20, "perk": "โทรฟรีทุกเครือข่าย", "price": 350, "color": "#e0236f", "badge": "", "feats": ["เน็ตไม่อั้น", "ความเร็ว 20 Mbps", "โทรฟรีทุกเครือข่าย"] }
+  ],
+  "lineUrl": "",
+  "footerNote": "เว็บตัวอย่าง ข้อมูลจำลอง ไม่ได้เชื่อมระบบจริง"
 }
 </script>
-</body>
-</html>
+
+<div class="wrap" id="app"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- ค่าเริ่มต้น และการโหลดเนื้อหาที่เจ้าของร้านแก้ไข ----------
+  var DEFAULT_SITE = JSON.parse(document.getElementById("site-data").textContent);
+  var SITE = DEFAULT_SITE;
+  var SETTINGS = { bank: "ธนาคารตัวอย่าง", accName: "บริษัท ตัวอย่าง จำกัด", accNo: "000-0-00000-0" };
+  var STATUS = { pending: ["รอชำระเงิน", "t-warn"], processing: ["กำลังดำเนินการ", "t-info"], activated: ["เปิดใช้งานแล้ว", "t-ok"], cancelled: ["ยกเลิกแล้ว", "t-muted"] };
+  var PAY = { pending_review: ["รอตรวจสลิป", "t-warn"], verified: ["รับเงินแล้ว", "t-ok"], rejected: ["สลิปไม่ผ่าน", "t-bad"] };
+  var orders = [];
+  var nextNo = 1043;
+  var state = { page: "home", id: null, customer: null, notice: null, menu: false, scrollTo: null };
+
+  function safeImage(src) { return typeof src === "string" && /^data:image\/(png|jpeg|webp);base64,/.test(src) ? src : ""; }
+  function safeColor(c) { return typeof c === "string" && /^#[0-9a-fA-F]{6}$/.test(c) ? c : "#0f5fd6"; }
+  function applySite(data) {
+    if (!data || typeof data !== "object") return;
+    var s = Object.assign({}, DEFAULT_SITE, data);
+    if (!Array.isArray(s.packages) || !s.packages.length) s.packages = DEFAULT_SITE.packages;
+    s.packages = s.packages.slice(0, 12).map(function (p, i) {
+      return { id: "p" + (i + 1), speed: Math.max(1, parseInt(p.speed, 10) || 1), perk: String(p.perk || ""), price: Math.max(0, parseInt(p.price, 10) || 0), color: safeColor(p.color), badge: String(p.badge || ""), feats: Array.isArray(p.feats) ? p.feats.map(String).slice(0, 6) : [] };
+    });
+    s.logoImage = safeImage(s.logoImage);
+    s.heroImage = safeImage(s.heroImage);
+    s.promo = Object.assign({}, DEFAULT_SITE.promo, s.promo || {});
+    s.promo.image = safeImage(s.promo.image);
+    s.perks = Array.isArray(s.perks) ? s.perks.slice(0, 3) : DEFAULT_SITE.perks;
+    s.carriers = Array.isArray(s.carriers) ? s.carriers.slice(0, 5) : DEFAULT_SITE.carriers;
+    SITE = s;
+  }
+  function loadSite() {
+    if (!window.fetch || location.protocol === "file:") return Promise.resolve();
+    return fetch("site-content.json", { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) { applySite(data); })
+      .catch(function () { /* ใช้ค่าเริ่มต้นในหน้า */ });
+  }
+
+  // ---------- เครื่องมือ ----------
+  function esc(v) { return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function baht(n) { return Number(n).toLocaleString("th-TH") + " บาท"; }
+  function mask(p) { return p.slice(0, 3) + "-XXX-X" + p.slice(-3); }
+  function pill(map, key) { var m = map[key]; return m ? '<span class="pill ' + m[1] + '">' + m[0] + "</span>" : ""; }
+  function latestPayment(o) { return o.payments[o.payments.length - 1] || null; }
+  function findOrder(id) { return orders.find(function (o) { return o.id === id; }); }
+  function pkgById(id) { return SITE.packages.find(function (p) { return p.id === id; }); }
+
+  var ICON = {
+    sim: '<svg width="30" height="38" viewBox="0 0 40 52" aria-hidden="true"><rect x="1" y="1" width="38" height="50" rx="8" fill="#1d6fe0"/><rect x="8" y="12" width="16" height="13" rx="3" fill="#ffd23f"/><path d="M1 34h38" stroke="#7fb4ff"/></svg>',
+    phone: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2z"/></svg>',
+    search: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>',
+    menu: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
+    gift: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0f5fd6" stroke-width="2" aria-hidden="true"><rect x="3" y="8" width="18" height="4"/><path d="M5 12v9h14v-9M12 8v13M12 8c-2-4-6-4-6-1s6 1 6 1zM12 8c2-4 6-4 6-1s-6 1-6 1z"/></svg>',
+    bolt: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>',
+    shield: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/></svg>',
+    headset: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 14v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="13" width="4" height="6" rx="1"/><rect x="17" y="13" width="4" height="6" rx="1"/></svg>',
+    check: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M5 12l4 4 10-10"/></svg>',
+    arrow: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>'
+  };
+
+  // ---------- การกระทำ ----------
+  function validateCheck(phoneRaw, simRaw) {
+    var phone = phoneRaw.replace(/[\s-]/g, "");
+    if (!/^0[689]\d{8}$/.test(phone)) return { error: "กรุณากรอกเบอร์มือถือไทย 10 หลัก เช่น 081-234-5678" };
+    var sim = simRaw.replace(/\s/g, "").toUpperCase();
+    if (!/^[A-Z0-9]{6,30}$/.test(sim)) return { error: "กรุณากรอกซีเรียลซิม 6–30 ตัว (ตัวอักษรและตัวเลข)" };
+    return { phone: phone, sim: sim };
+  }
+  function createOrder(pkgId) {
+    if (!state.customer) return { error: "กรุณายืนยันเบอร์และซีเรียลซิมก่อน" };
+    var pkg = pkgById(pkgId);
+    if (!pkg) return { error: "แพ็กเกจนี้ไม่พร้อมให้บริการแล้ว" };
+    var pending = orders.filter(function (o) { return o.phone === state.customer.phone && o.status === "pending"; });
+    if (pending.length >= 3) return { error: "มีคำสั่งซื้อที่รอดำเนินการครบ 3 รายการแล้ว" };
+    var o = { id: "o" + nextNo, no: nextNo, phone: state.customer.phone, sim: state.customer.sim, pkgName: "อินเทอร์เน็ต " + pkg.speed + " Mbps", speed: pkg.speed, total: pkg.price, status: "pending", payments: [] };
+    nextNo++;
+    orders.unshift(o);
+    return { id: o.id };
+  }
+  function submitSlip(o, raw, file) {
+    var ref = raw.replace(/[\s-]+/g, "").toUpperCase();
+    if (!/^[A-Z0-9]{6,40}$/.test(ref)) return "เลขอ้างอิงต้องเป็นตัวอักษรหรือตัวเลข 6–40 ตัว";
+    if (!file || !file.size) return "กรุณาแนบรูปสลิปการโอน";
+    if (["image/jpeg", "image/png", "image/webp"].indexOf(file.type) < 0) return "รองรับเฉพาะไฟล์ JPEG, PNG หรือ WebP";
+    if (file.size > 5 * 1024 * 1024) return "ไฟล์สลิปต้องมีขนาดไม่เกิน 5 MB";
+    if (o.status !== "pending") return "คำสั่งซื้อนี้ไม่อยู่ในสถานะรอชำระเงิน";
+    if (o.payments.some(function (p) { return p.status === "pending_review"; })) return "มีสลิปรอตรวจอยู่แล้ว";
+    o.payments.push({ ref: ref, status: "pending_review" });
+    return null;
+  }
+
+  // ---------- การนำทาง ----------
+  function go(page, id) { state.page = page; state.id = id || null; state.menu = false; render(); window.scrollTo(0, 0); }
+  function scrollTo(target) {
+    state.menu = false;
+    if (state.page !== "home") { state.page = "home"; state.scrollTo = target; render(); return; }
+    var el = document.getElementById(target);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  function errorOn(form, msg) { var box = form.querySelector(".err"); box.textContent = msg; box.classList.remove("hidden"); }
+
+  // ---------- ส่วนประกอบ ----------
+  function logoMark() { return SITE.logoImage ? '<img class="logo-img" src="' + SITE.logoImage + '" alt="">' : ICON.sim; }
+
+  function header() {
+    var menuItems = [
+      '<button type="button" data-act="home">หน้าแรก</button>',
+      '<button type="button" data-act="scroll" data-target="packages">แพ็กเกจเน็ต</button>',
+      '<button type="button" data-act="scroll" data-target="check">เบอร์มงคล</button>',
+      '<button type="button" data-act="scroll" data-target="benefits">วิธีสมัคร</button>',
+      '<button type="button" data-act="scroll" data-target="contact">ติดต่อเรา</button>'
+    ];
+    if (state.customer) menuItems.push('<button type="button" data-act="orders">คำสั่งซื้อของฉัน</button>');
+    menuItems.push(state.customer
+      ? '<button type="button" class="cta" data-act="logout">ออกจากระบบ</button>'
+      : '<button type="button" class="cta" data-act="login">เข้าสู่ระบบ</button>');
+    return '<header class="hdr">' +
+      '<button class="logo" type="button" data-act="home" aria-label="หน้าแรก">' + logoMark() +
+      '<div><div class="logo-name">' + esc(SITE.brandName) + '</div><div class="tag">' + esc(SITE.tagline) + '</div></div></button>' +
+      '<div class="hdr-actions">' +
+      '<button class="icon-btn" type="button" data-act="scroll" data-target="check" aria-label="ค้นหาเบอร์">' + ICON.search + '</button>' +
+      '<button class="icon-btn" type="button" data-act="menu" aria-expanded="' + state.menu + '" aria-label="เมนู">' + ICON.menu + '</button>' +
+      '</div></header>' +
+      (state.menu ? '<nav class="menu" aria-label="เมนูหลัก">' + menuItems.join("") + '</nav>' : "");
+  }
+
+  function hero() {
+    var visual = SITE.heroImage
+      ? '<img class="hero-photo" src="' + SITE.heroImage + '" alt="">'
+      : '<div class="phone" aria-hidden="true">5G</div>';
+    return '<section class="hero"><div class="hero-row"><div class="hero-text">' +
+      '<h1>' + esc(SITE.heroLine1) + '</h1><span class="hl">' + esc(SITE.heroLine2) + '</span>' +
+      '<div class="by">' + esc(SITE.heroBy) + '</div>' +
+      '<div class="feat">' + esc(SITE.heroText) + '</div>' +
+      '</div>' + visual + '</div>' +
+      '<div class="chips">' + SITE.carriers.map(function (c) { return '<span class="chip-carrier">' + esc(c) + '</span>'; }).join("") + '</div>' +
+      '<div class="perks">' + SITE.perks.map(function (k, i) {
+        var icon = [ICON.bolt, ICON.shield, ICON.headset][i] || ICON.check;
+        return '<div class="perk"><span class="ring">' + icon + '</span><div><b>' + esc(k.title) + '</b>' + esc(k.text) + '</div></div>';
+      }).join("") + '</div></section>';
+  }
+
+  function checkCard() {
+    var phoneVal = state.customer ? esc(state.customer.phone) : "";
+    var simVal = state.customer ? esc(state.customer.sim) : "";
+    return '<section class="card" id="check">' +
+      '<div class="card-head">' + ICON.sim + '<div><h2>เช็คเบอร์มือถือ / เลือกแพ็กเกจ</h2>' +
+      '<p class="muted">กรอกเบอร์มือถือที่ต้องการตรวจสอบ หรือสมัครแพ็กเกจ</p></div></div>' +
+      '<form class="stack" data-form="check">' +
+      '<label class="label">เบอร์มือถือ<span class="field">' + ICON.phone +
+      '<input name="phone" inputmode="tel" autocomplete="tel" placeholder="081-234-5678" value="' + phoneVal + '"></span></label>' +
+      '<label class="label">ซีเรียลซิมที่ได้รับ<span class="field"><input name="sim" autocomplete="off" placeholder="พิมพ์ตัวเลขและตัวอักษรบนซิม" value="' + simVal + '"></span></label>' +
+      '<div class="how"><b>วิธีใช้งาน</b><br>1. กรอกเบอร์มือถือ &nbsp; 2. เลือกแพ็กเกจที่ต้องการ &nbsp; 3. กดปุ่ม "เช็คและสมัครได้เลย"</div>' +
+      '<div class="err hidden" role="alert"></div>' +
+      '<button class="btn-primary" type="submit">' + ICON.search + ' เช็คและสมัครได้เลย ' + ICON.arrow + '</button>' +
+      (state.customer ? '<div class="ok-line">ยืนยันแล้วด้วยเบอร์ ' + mask(state.customer.phone) + ' เลือกแพ็กเกจด้านล่างได้เลย</div>' : "") +
+      '</form></section>';
+  }
+
+  function benefits() {
+    return '<section class="card" id="benefits"><h2>สะดวก ปลอดภัย มั่นใจได้</h2>' +
+      '<p class="muted">ทำรายการผ่านระบบออนไลน์ มาตรฐานเดียวกับ True, AIS, Dtac</p>' +
+      '<div class="bgrid">' +
+      '<div class="bitem"><span class="bcircle">' + ICON.phone + '</span><b>สมัครง่าย</b><span>แค่มีเบอร์มือถือ</span></div>' +
+      '<div class="bitem"><span class="bcircle">' + ICON.shield + '</span><b>ปลอดภัย</b><span>ข้อมูลส่วนตัวเป็นความลับ</span></div>' +
+      '<div class="bitem"><span class="bcircle">' + ICON.bolt + '</span><b>รวดเร็ว</b><span>รับ SMS ยืนยันทันที</span></div>' +
+      '<div class="bitem"><span class="bcircle">' + ICON.headset + '</span><b>ดูแลตลอด</b><span>ทีมงานพร้อมช่วยเหลือ</span></div>' +
+      '</div></section>';
+  }
+
+  function promo() {
+    var img = SITE.promo.image ? '<img class="promo-img" src="' + SITE.promo.image + '" alt="">' : "";
+    return '<section class="promo promo-col">' + img +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><b>' + esc(SITE.promo.title) + '</b><span>' + esc(SITE.promo.text) + '</span></div>' +
+      '<div class="slogan">' + esc(SITE.promo.slogan) + '</div></div></section>';
+  }
+
+  function packageCard(p, i) {
+    var head = i === 0
+      ? '<div class="pk-head"><div class="pk-spd">' + p.speed + ' Mbps</div><div class="pk-perk">' + esc(p.perk) + '</div></div>'
+      : '<div class="pk-top"><div class="pk-spd">' + p.speed + ' Mbps</div><div class="pk-perk">' + esc(p.perk) + '</div></div>';
+    return '<div class="pkg-wrap">' + (p.badge ? '<span class="badge">' + esc(p.badge) + '</span>' : "") +
+      '<article class="pkg" style="--c:' + p.color + '">' + head +
+      '<div class="pk-price">' + p.price + ' <small>บาท/เดือน</small></div>' +
+      '<ul class="pk-feats">' + p.feats.map(function (f) { return '<li>' + ICON.check + '<span>' + esc(f) + '</span></li>'; }).join("") + '</ul>' +
+      '<button class="pk-btn" type="button" data-act="pick" data-id="' + p.id + '">เลือกแพ็กเกจ ' + ICON.arrow + '</button>' +
+      '</article></div>';
+  }
+
+  function packages() {
+    return '<section id="packages"><div class="sec-head"><div><h2>' + ICON.gift + ' แพ็กเกจที่ให้บริการ</h2>' +
+      '<p class="muted">เลือกแพ็กเกจที่ใช่ สำหรับคุณ</p></div>' +
+      '<button class="link-btn" type="button" data-act="scroll" data-target="packages">ดูรายละเอียดทั้งหมด →</button></div>' +
+      '<div class="pkgs">' + SITE.packages.map(packageCard).join("") + '</div></section>';
+  }
+
+  function footer() {
+    var line = SITE.lineUrl ? '<a class="line-btn" href="' + esc(SITE.lineUrl) + '" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;text-decoration:none">ติดต่อเราทาง LINE</a>'
+      : '<button class="line-btn" type="button" data-act="contactLine">ติดต่อเราทาง LINE</button>';
+    return '<footer class="ftr" id="contact">' +
+      '<button class="logo" type="button" data-act="home">' + logoMark() + '<div><div class="logo-name">' + esc(SITE.brandName) + '</div><div class="tag">' + esc(SITE.tagline) + '</div></div></button>' +
+      '<div class="ftr-links"><button type="button" data-act="home">หน้าแรก</button><button type="button" data-act="scroll" data-target="packages">แพ็กเกจเน็ต</button>' +
+      '<button type="button" data-act="scroll" data-target="check">เบอร์มงคล</button><button type="button" data-act="scroll" data-target="benefits">วิธีสมัคร</button>' +
+      '<button type="button" data-act="scroll" data-target="contact">ติดต่อเรา</button></div>' +
+      '<div class="soc"><span>LINE</span><span>f</span><span>TT</span></div>' + line +
+      '<p class="copy">© 2026 ' + esc(SITE.brandName) + '. สงวนสิทธิ์<br>' + esc(SITE.footerNote) + '</p></footer>';
+  }
+
+  function homePage() { return hero() + checkCard() + benefits() + promo() + packages(); }
+
+  function orderPage() {
+    var o = findOrder(state.id);
+    if (!o || o.phone !== state.customer.phone) return '<button class="back" type="button" data-act="home">← กลับหน้าแรก</button><section class="card"><p>ไม่พบคำสั่งซื้อ</p></section>';
+    var p = latestPayment(o);
+    var html = '<button class="back" type="button" data-act="orders">← คำสั่งซื้อของฉัน</button>' +
+      '<section class="card"><p class="muted">คำสั่งซื้อ #' + o.no + '</p><div class="row"><h2>' + esc(o.pkgName) + '</h2>' + pill(STATUS, o.status) + '</div>' +
+      '<dl class="kv"><dt>ความเร็ว</dt><dd>' + o.speed + ' Mbps</dd><dt>ยอดชำระ</dt><dd>' + baht(o.total) + '</dd><dt>เบอร์</dt><dd>' + mask(o.phone) + '</dd>' +
+      (p ? '<dt>การชำระเงิน</dt><dd>' + pill(PAY, p.status) + '</dd>' : "") + '</dl></section>';
+    if (o.status === "pending" && !o.payments.some(function (x) { return x.status === "pending_review"; })) {
+      html += '<section class="card"><h2>ชำระเงิน</h2><p class="muted" style="margin-top:6px">โอนยอด <b>' + baht(o.total) + '</b> ไปที่</p>' +
+        '<dl class="kv"><dt>ธนาคาร</dt><dd>' + esc(SETTINGS.bank) + '</dd><dt>ชื่อบัญชี</dt><dd>' + esc(SETTINGS.accName) + '</dd><dt>เลขบัญชี</dt><dd>' + esc(SETTINGS.accNo) + '</dd></dl>' +
+        '<div class="qr">QR รับเงิน<br>(ตัวอย่าง)</div>' +
+        '<form class="stack" data-form="slip" data-id="' + o.id + '">' +
+        '<label class="label">เลขอ้างอิงการโอน<span class="field"><input name="ref" placeholder="เช่น 0123456789012345" required></span></label>' +
+        '<label class="label">รูปสลิป (JPEG, PNG, WebP ไม่เกิน 5 MB)<input name="slip" type="file" accept="image/jpeg,image/png,image/webp" required></label>' +
+        '<div class="err hidden" role="alert"></div><button class="btn-primary" type="submit">ส่งสลิป ' + ICON.arrow + '</button></form></section>';
+    } else if (p && p.status === "pending_review") {
+      html += '<section class="card"><div class="ok-line">ส่งสลิปแล้ว รอทีมงานตรวจยอดการโอน</div></section>';
+    }
+    return html;
+  }
+
+  function ordersPage() {
+    var mine = orders.filter(function (o) { return o.phone === state.customer.phone; });
+    var html = '<button class="back" type="button" data-act="home">← หน้าแรก</button><section class="card"><h2>คำสั่งซื้อของฉัน</h2></section>';
+    if (!mine.length) return html + '<section class="card"><p class="muted">ยังไม่มีคำสั่งซื้อ</p><div style="margin-top:10px"><button class="btn-primary" type="button" data-act="scroll" data-target="packages">เลือกแพ็กเกจ</button></div></section>';
+    return html + mine.map(function (o) {
+      var p = latestPayment(o);
+      return '<button class="card order-link" type="button" data-act="openOrder" data-id="' + o.id + '">' +
+        '<div class="row"><strong>คำสั่งซื้อ #' + o.no + ' · ' + esc(o.pkgName) + '</strong><span>' + baht(o.total) + '</span></div>' +
+        '<div class="row">' + pill(STATUS, o.status) + (p ? pill(PAY, p.status) : "") + '</div></button>';
+    }).join("");
+  }
+
+  // ---------- การแสดงผล ----------
+  function render() {
+    if (!state.customer && state.page !== "home") state.page = "home";
+    var main = state.page === "order" ? orderPage() : state.page === "orders" ? ordersPage() : homePage();
+    var note = state.notice ? '<div class="notice-top ' + (state.notice.kind === "bad" ? "bad" : "") + '">' + esc(state.notice.msg) + "</div>" : "";
+    state.notice = null;
+    document.getElementById("app").innerHTML = header() + note + main + footer();
+    if (state.scrollTo) {
+      var el = document.getElementById(state.scrollTo);
+      state.scrollTo = null;
+      if (el) el.scrollIntoView({ block: "start" });
+    }
+  }
+
+  // ---------- ตัวจัดการเหตุการณ์ ----------
+  document.addEventListener("click", function (e) {
+    var el = e.target.closest("[data-act]");
+    if (!el) return;
+    var act = el.getAttribute("data-act");
+    var id = el.getAttribute("data-id");
+    if (act === "home") { go("home"); return; }
+    if (act === "scroll") { scrollTo(el.getAttribute("data-target")); return; }
+    if (act === "menu") { state.menu = !state.menu; render(); return; }
+    if (act === "login") {
+      state.menu = false; render();
+      var input = document.querySelector('form[data-form=check] input[name=phone]');
+      if (input) { input.scrollIntoView({ block: "center" }); input.focus(); }
+      return;
+    }
+    if (act === "logout") { state.customer = null; state.menu = false; state.notice = { msg: "ออกจากระบบแล้ว" }; go("home"); return; }
+    if (act === "orders") { go("orders"); return; }
+    if (act === "openOrder") { go("order", id); return; }
+    if (act === "contactLine") { state.notice = { msg: "ตัวอย่าง: ปุ่มนี้จะเปิดแชต LINE ของทีมงานเมื่อกรอกลิงก์ LINE ในหลังบ้าน" }; render(); return; }
+    if (act === "pick") {
+      if (!state.customer) {
+        var form = document.querySelector('form[data-form=check]');
+        if (form) { errorOn(form, "กรุณายืนยันเบอร์และซีเรียลซิมก่อนเลือกแพ็กเกจ"); form.scrollIntoView({ block: "center" }); }
+        return;
+      }
+      var r = createOrder(id);
+      if (r.error) { state.notice = { msg: r.error, kind: "bad" }; render(); return; }
+      go("order", r.id);
+    }
+  });
+
+  document.addEventListener("submit", function (e) {
+    var form = e.target.closest("form[data-form]");
+    if (!form) return;
+    e.preventDefault();
+    var kind = form.getAttribute("data-form");
+    var fd = new FormData(form);
+    if (kind === "check") {
+      var v = validateCheck(String(fd.get("phone") || ""), String(fd.get("sim") || ""));
+      if (v.error) { errorOn(form, v.error); return; }
+      state.customer = { phone: v.phone, sim: v.sim };
+      state.notice = { msg: "ยืนยันเบอร์แล้ว เลือกแพ็กเกจได้เลย" };
+      state.scrollTo = "packages";
+      render();
+      return;
+    }
+    if (kind === "slip") {
+      var o = findOrder(form.getAttribute("data-id"));
+      var err = submitSlip(o, String(fd.get("ref") || ""), fd.get("slip"));
+      if (err) { errorOn(form, err); return; }
+      state.notice = { msg: "ส่งสลิปแล้ว รอทีมงานตรวจ" };
+      render();
+    }
+  });
+
+  loadSite().then(render);
+  render();
+})();
+</script>
