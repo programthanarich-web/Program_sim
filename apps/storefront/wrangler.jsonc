@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "program-thanarich-shop",
+  "name": "program-sim",
   "main": ".open-next/worker.js",
   "compatibility_date": "2025-08-31",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
@@ -11,7 +11,7 @@
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
-      "service": "program-thanarich-shop"
+      "service": "program-sim"
     }
   ]
 }
