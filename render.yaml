@@ -1,0 +1,48 @@
+# Render Blueprint: สร้างหน้าบ้านและหลังบ้านพร้อมกันจากไฟล์นี้
+# ค่าที่เป็นความลับ (sync: false) จะถูกถามตอนสร้างครั้งแรก และไม่ถูกเก็บในไฟล์นี้
+services:
+  - type: web
+    name: program-thanarich-shop
+    runtime: node
+    plan: free
+    branch: render-hosting
+    buildCommand: npm ci && npm run build -w @pt/storefront
+    startCommand: npm run start -w @pt/storefront
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+
+  - type: web
+    name: program-thanarich-admin
+    runtime: node
+    plan: free
+    branch: render-hosting
+    buildCommand: npm ci && npm run build -w @pt/backoffice
+    startCommand: npm run start -w @pt/backoffice
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: APP_BASE_URL
+        sync: false
+      - key: NOTIFY_DISPATCH_SECRET
+        sync: false
+      - key: GITHUB_CONTENT_TOKEN
+        sync: false
+      - key: GITHUB_CONTENT_REPO
+        value: programthanarich-web/Program_sim
+      - key: GITHUB_CONTENT_BRANCH
+        value: main
+      - key: GITHUB_CONTENT_PREFIX
+        value: apps/storefront
