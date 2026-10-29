@@ -126,6 +126,23 @@
   .lk-pair b{color:var(--blue-d);margin-right:8px}
   .lk-warn{margin-top:14px;background:#fff4d6;color:#8a5b00;border-radius:10px;padding:8px 10px;font-size:13px}
 
+  /* ---------- รายการเบอร์มงคล (ดีไซน์การ์ด) ---------- */
+  .lk-section{background:linear-gradient(180deg,#06203f,#0a2d5c);border-radius:18px;padding:18px 10px 12px;margin-bottom:14px}
+  .lk-title{color:#ffd76a;font-weight:800;font-size:20px;text-align:center}
+  .lk-sub{color:#cfe0f7;font-size:12.5px;text-align:center;margin:2px 0 12px}
+  .lk-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .lk-card{background:#fffdf7;border-radius:14px;padding:8px 8px 0;cursor:pointer;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.25);display:flex;flex-direction:column}
+  .lk-top-row{display:flex;justify-content:space-between;align-items:center;gap:4px;min-height:24px}
+  .lk-badge{background:linear-gradient(135deg,#ffd76a,#e8a317);color:#5a3a00;font-size:11px;font-weight:800;padding:3px 8px;border-radius:99px}
+  .lk-carrier{font-size:14px;font-weight:800;color:#e0202a}
+  .lk-pill{align-self:flex-end;background:#f5d77a;color:#5a3a00;font-size:11px;font-weight:700;padding:2px 9px;border-radius:99px;margin-top:2px}
+  .lk-phone{text-align:center;font-size:17px;font-weight:800;color:#111;letter-spacing:.5px;margin:6px 0 8px}
+  .lk-icons{display:flex;justify-content:space-around;gap:4px}
+  .lk-ic{display:flex;flex-direction:column;align-items:center;font-size:10px;color:#333}
+  .lk-box{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;border:1px solid #d4a43a}
+  .lk-price{margin-top:10px;background:linear-gradient(90deg,#06203f,#0d3d7a,#06203f);color:#f5c94a;text-align:center;font-weight:800;font-size:18px;padding:9px;border-radius:10px}
+  .lk-foot{background:#0d4a94;color:#fff;font-size:12px;font-weight:700;text-align:center;padding:8px;margin:10px -8px 0}
+
   /* ---------- Banner ---------- */
   .banner{background:linear-gradient(90deg,var(--blue-d),var(--blue-l));color:#fff;border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
   .banner b{font-size:16px;display:block}
@@ -326,16 +343,23 @@ function luckyCard() {
   const list = Array.isArray(CONFIG.luckyNumbers) ? CONFIG.luckyNumbers.filter(x => x && x.number) : [];
   if (!list.length) return "";
   return `
-      <div class="card">
-        <div class="card-head"><div class="ic"></div><h2>เบอร์มงคล</h2></div>
-        <div class="sub">เลือกเบอร์ที่ถูกใจ สอบถามเพิ่มเติมได้ที่ร้าน</div>
-        <div class="lucky-grid">
+      <div class="lk-section">
+        <div class="lk-title">🍀 เบอร์มงคล</div>
+        <div class="lk-sub">เลือกเบอร์ที่ถูกใจ กดดูความหมายได้เลย</div>
+        <div class="lk-grid">
           ${CONFIG.luckyNumbers.map((x, i) => (x && x.number) ? `
-            <div class="lucky" onclick="openLucky(${i})">
-              <div class="ln">${x.number}</div>
-              <div class="lp">${Number(x.price) > 0 ? Number(x.price).toLocaleString("th-TH") + " บาท" : "สอบถามราคา"}</div>
-              ${x.note ? `<div class="lnote">${x.note}</div>` : ""}
-              <div class="lk-btn">ดูความหมาย</div>
+            <div class="lk-card" onclick="openLucky(${i})">
+              <div class="lk-top-row">
+                ${x.featured ? `<span class="lk-badge">แนะนำ</span>` : `<span></span>`}
+                <span class="lk-carrier">${x.carrier || ""}</span>
+              </div>
+              <div class="lk-pill">เติมเงิน</div>
+              <div class="lk-phone">${fmtNumber(x.number)}</div>
+              <div class="lk-icons">
+                ${tagsOf(x).map(t => `<div class="lk-ic"><span class="lk-box" style="background:${tagStyle(t)[1]}">${tagStyle(t)[0]}</span><small>${t}</small></div>`).join("")}
+              </div>
+              <div class="lk-price">${priceLabel(x)}</div>
+              <div class="lk-foot">ดูความหมาย →</div>
             </div>` : "").join("")}
         </div>
       </div>`;
@@ -429,6 +453,33 @@ function analyzeLucky(number) {
     },
     warn: digits.includes("4") ? "มีเลข 4 ซึ่งบางตำราถือว่าไม่เป็นมงคล" : ""
   };
+}
+
+// ตัวช่วยแสดงผลการ์ดเบอร์มงคล
+function fmtNumber(n) {
+  const d = String(n).replace(/\D/g, "");
+  return d.length === 10 ? `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6)}` : String(n);
+}
+
+function tagsOf(x) {
+  return String(x.tags || "").split(",").map(s => s.trim()).filter(Boolean).slice(0, 4);
+}
+
+const TAG_STYLE = {
+  "สุขภาพ": ["💚", "#5a9a2b"],
+  "เงิน/งาน": ["🪙", "#2f4a5e"],
+  "ความรัก": ["💗", "#c2708a"],
+  "เซ็นส์": ["💡", "#7a4fe0"],
+  "สติปัญญา": ["👁️", "#c9a227"],
+  "โชคลาภ": ["🍀", "#a0722b"]
+};
+
+function tagStyle(t) {
+  return TAG_STYLE[t] || ["⭐", "#8a8a8a"];
+}
+
+function priceLabel(x) {
+  return Number(x.price) > 0 ? Number(x.price).toLocaleString("th-TH") + " ฿" : "สอบถามราคา";
 }
 
 function openLucky(i) {
