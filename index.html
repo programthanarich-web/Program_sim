@@ -112,6 +112,19 @@
   .lucky .ln{font-size:17px;font-weight:800;letter-spacing:1px;color:var(--blue-d)}
   .lucky .lp{font-size:13px;font-weight:700;color:var(--ok);margin-top:4px}
   .lucky .lnote{font-size:11px;color:var(--muted);margin-top:2px}
+  .lucky{cursor:pointer}
+  .lk-btn{display:inline-block;margin-top:8px;background:var(--blue);color:#fff;border-radius:99px;font-size:12px;font-weight:700;padding:5px 12px}
+  .lk-top{text-align:center}
+  .lk-num{font-size:36px;font-weight:800;letter-spacing:2px;color:var(--blue-d)}
+  .lk-price{font-size:20px;font-weight:800;color:var(--ok);margin:6px 0}
+  .lk-row{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:7px 0;border-bottom:1px dashed var(--line)}
+  .lk-row b{text-align:right}
+  .lk-block{margin-top:14px}
+  .lk-block h4{font-size:14px;color:#0b3d91;margin-bottom:4px}
+  .lk-block p{font-size:13.5px;color:var(--text);margin:2px 0}
+  .lk-pair{font-size:13.5px;margin:5px 0}
+  .lk-pair b{color:var(--blue-d);margin-right:8px}
+  .lk-warn{margin-top:14px;background:#fff4d6;color:#8a5b00;border-radius:10px;padding:8px 10px;font-size:13px}
 
   /* ---------- Banner ---------- */
   .banner{background:linear-gradient(90deg,var(--blue-d),var(--blue-l));color:#fff;border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
@@ -317,14 +330,110 @@ function luckyCard() {
         <div class="card-head"><div class="ic"></div><h2>เบอร์มงคล</h2></div>
         <div class="sub">เลือกเบอร์ที่ถูกใจ สอบถามเพิ่มเติมได้ที่ร้าน</div>
         <div class="lucky-grid">
-          ${list.map(x => `
-            <div class="lucky">
+          ${CONFIG.luckyNumbers.map((x, i) => (x && x.number) ? `
+            <div class="lucky" onclick="openLucky(${i})">
               <div class="ln">${x.number}</div>
               <div class="lp">${Number(x.price) > 0 ? Number(x.price).toLocaleString("th-TH") + " บาท" : "สอบถามราคา"}</div>
               ${x.note ? `<div class="lnote">${x.note}</div>` : ""}
-            </div>`).join("")}
+              <div class="lk-btn">ดูความหมาย</div>
+            </div>` : "").join("")}
         </div>
       </div>`;
+}
+
+// ---------- วิเคราะห์เบอร์มงคล (ความเชื่อเลขศาสตร์ไทย ค่าตั้งต้น แก้ไขได้ในโค้ด) ----------
+const LUCKY_DIGIT = {
+  0: { name: "ศูนย์", mean: "ความว่าง การเริ่มต้นใหม่ ไร้ขีดจำกัด" },
+  1: { name: "หนึ่ง", mean: "ความเป็นผู้นำ ความก้าวหน้า การเริ่มต้น" },
+  2: { name: "สอง", mean: "ความรัก ความสัมพันธ์ ความร่วมมือ" },
+  3: { name: "สาม", mean: "ความเจริญรุ่งเรือง การเติบโต การค้าขาย" },
+  4: { name: "สี่", mean: "ความมั่นคง ความหนักแน่น" },
+  5: { name: "ห้า", mean: "การเปลี่ยนแปลง ความคล่องตัว การสื่อสาร" },
+  6: { name: "หก", mean: "ความรัก ครอบครัว ความรับผิดชอบ ความลงตัว" },
+  7: { name: "เจ็ด", mean: "ปัญญา การเรียนรู้ จิตใจที่สงบ" },
+  8: { name: "แปด", mean: "ความร่ำรวย ความสำเร็จทางการเงิน ความก้าวหน้า" },
+  9: { name: "เก้า", mean: "ความยิ่งใหญ่ อำนาจ การได้รับการยอมรับ" }
+};
+
+const LUCKY_PAIRS = {
+  "19": "ก้าวหน้าในการงาน ได้รับการยอมรับ เป็นผู้นำ",
+  "28": "การเงินมั่นคง ร่ำรวย มีโชคลาภ",
+  "37": "ความรักและครอบครัวอบอุ่น ความสัมพันธ์ดี",
+  "46": "ความมั่นคงในชีวิต มีที่พึ่ง ราบรื่น",
+  "55": "การค้า การเจรจา ความเจริญทางธุรกิจ",
+  "64": "ความรักและความเข้าใจ ความสามัคคี",
+  "73": "ปัญญา การศึกษา ความคิดสร้างสรรค์",
+  "82": "ความมั่งคั่ง โชคลาภทางการเงิน ความสำเร็จ",
+  "91": "อำนาจ บารมี ความเป็นผู้นำ",
+  "99": "ความยิ่งใหญ่ ความสำเร็จสูงสุด"
+};
+
+// ผลรวมตัวเลข (ลดเหลือหลักเดียว) → คนที่เหมาะ อาชีพ และเรื่องที่ส่งเสริม
+const LUCKY_FIT = {
+  1: { who: "ผู้ประกอบการ ผู้บริหาร คนที่ชอบเป็นผู้นำ", job: "ผู้จัดการ เจ้าของร้าน หัวหน้าทีม", boost: "การงาน ความก้าวหน้า ความเป็นผู้นำ" },
+  2: { who: "คนที่ทำงานร่วมกับผู้อื่น ชอบความสัมพันธ์และความร่วมมือ", job: "ฝ่ายบริการ ฝ่ายขาย ที่ปรึกษา", boost: "ความรัก ความสัมพันธ์ การเจรจา" },
+  3: { who: "คนค้าขาย คนมีความคิดสร้างสรรค์ ชอบการแสดงออก", job: "ค้าขาย การตลาด ศิลปิน นักเขียน", boost: "การเงิน การค้า ความสำเร็จ" },
+  4: { who: "คนที่ต้องการความมั่นคง ทำงานเป็นระบบ", job: "วิศวกร ช่าง ข้าราชการ ผู้จัดการระบบ", boost: "ความมั่นคง การงานที่แน่นอน" },
+  5: { who: "คนที่ชอบการเดินทาง ความคล่องตัว และการสื่อสาร", job: "นักการตลาด พนักงานขาย สื่อมวลชน", boost: "การสื่อสาร การค้า การเดินทาง" },
+  6: { who: "คนที่ให้ความสำคัญกับครอบครัวและความรับผิดชอบ", job: "ครู พยาบาล ธุรกิจครอบครัว", boost: "ครอบครัว ความรัก ความสมดุล" },
+  7: { who: "คนที่ใช้ความคิดและการเรียนรู้", job: "นักวิชาการ โปรแกรมเมอร์ นักวิจัย นักเขียน", boost: "การศึกษา ปัญญา ความสงบ" },
+  8: { who: "คนที่มุ่งเป้าหมายทางการเงิน", job: "ธุรกิจการเงิน ค้าขาย เจ้าของกิจการ", boost: "การเงิน โชคลาภ ความร่ำรวย" },
+  9: { who: "คนที่ต้องการการยอมรับและความยิ่งใหญ่", job: "ผู้บริหารระดับสูง นักกฎหมาย ผู้นำองค์กร", boost: "อำนาจ บารมี ความสำเร็จสูงสุด" }
+};
+
+// ใช้ตารางจากหลังบ้านถ้ามี ไม่มีก็ใช้ค่าตั้งต้นในโค้ด
+function ruleTables() {
+  const r = CONFIG.luckyRules;
+  if (!r || !Array.isArray(r.digits)) return { digit: LUCKY_DIGIT, pair: LUCKY_PAIRS, fit: LUCKY_FIT };
+  const digit = {};
+  r.digits.forEach(x => { digit[x.d] = { name: x.name, mean: x.mean }; });
+  const pair = {};
+  (r.pairs || []).forEach(x => { if (x.pair) pair[x.pair] = x.mean; });
+  const fit = {};
+  (r.fit || []).forEach(x => { fit[x.n] = { who: x.who, job: x.job, boost: x.boost }; });
+  return { digit, pair, fit };
+}
+
+function analyzeLucky(number) {
+  const T = ruleTables();
+  const digits = String(number).replace(/\D/g, "");
+  if (!digits) return null;
+
+  const sum = [...digits].reduce((a, d) => a + Number(d), 0);
+  let root = sum;
+  while (root > 9) root = String(root).split("").reduce((a, d) => a + Number(d), 0);
+  const key = root || 9;
+
+  // เลขคู่มงคลที่พบ (ดูทีละ 2 หลักที่ต่อกัน)
+  const pairs = [];
+  for (let i = 0; i < digits.length - 1; i++) {
+    const pr = digits.slice(i, i + 2);
+    if (T.pair[pr] && !pairs.some(p => p.pair === pr)) pairs.push({ pair: pr, mean: T.pair[pr] });
+  }
+
+  // เลขเด่นที่สุด
+  const counts = {};
+  [...digits].forEach(d => { counts[d] = (counts[d] || 0) + 1; });
+  const topDigit = Object.keys(counts).sort((a, b) => counts[b] - counts[a] || a - b)[0];
+
+  return {
+    sum,
+    root: key,
+    fit: T.fit[key] || { who: "-", job: "-", boost: "-" },
+    pairs,
+    top: {
+      d: topDigit,
+      count: counts[topDigit],
+      name: T.digit[topDigit] ? T.digit[topDigit].name : "",
+      mean: T.digit[topDigit] ? T.digit[topDigit].mean : ""
+    },
+    warn: digits.includes("4") ? "มีเลข 4 ซึ่งบางตำราถือว่าไม่เป็นมงคล" : ""
+  };
+}
+
+function openLucky(i) {
+  state.lucky = CONFIG.luckyNumbers[i];
+  go("lucky-detail");
 }
 
 // ข้อความส่วนลดร้านแบบรวม (ใช้ในเมนูหน้าแรก)
@@ -426,6 +535,36 @@ const screens = {
           <div class="feat"><div class="fi">🎧</div><b>ดูแลลอด</b><span>ทีมงานพร้อมช่วยเหลือ</span></div>
         </div>
       </div>`;
+  },
+
+  "lucky-detail"() {
+    hero.classList.add("hidden");
+    const x = state.lucky;
+    if (!x) return `<div class="card"><p>ไม่พบข้อมูลเบอร์</p></div>`;
+    const a = analyzeLucky(x.number);
+    const price = Number(x.price) > 0 ? Number(x.price).toLocaleString("th-TH") + " บาท" : "สอบถามราคา";
+    return `
+      <div class="card lk-top">
+        <div class="lk-num">${x.number}</div>
+        <div class="lk-price">${price}</div>
+        ${x.note ? `<div class="lnote">${x.note}</div>` : ""}
+      </div>
+      ${a ? `
+      <div class="card">
+        <div class="card-head"><div class="ic"></div><h2>วิเคราะห์เบอร์</h2></div>
+        <div class="sub">วิเคราะห์อัตโนมัติตามหลักเลขศาสตร์ไทย เป็นความเชื่อ ไม่ใช่ข้อเท็จจริงทางวิทยาศาสตร์</div>
+        <div class="lk-row"><span>ผลรวมตัวเลข</span><b>${a.sum} → ${a.root}</b></div>
+        <div class="lk-row"><span>เลขเด่นที่สุด</span><b>${a.top.d} (${a.top.name}) ${a.top.count} ตัว</b></div>
+        <div class="lk-row"><span>ความหมายเลขเด่น</span><b>${a.top.mean}</b></div>
+        <div class="lk-block"><h4>เหมาะกับ</h4><p>${a.fit.who}</p></div>
+        <div class="lk-block"><h4>อาชีพที่เหมาะ</h4><p>${a.fit.job}</p></div>
+        <div class="lk-block"><h4>ส่งเสริมเรื่อง</h4><p>${a.fit.boost}</p></div>
+        <div class="lk-block"><h4>เลขคู่มงคลที่พบ</h4>
+          ${a.pairs.length ? a.pairs.map(p => `<div class="lk-pair"><b>${p.pair}</b>${p.mean}</div>`).join("") : `<p>ไม่พบเลขคู่มงคลในเบอร์นี้</p>`}
+        </div>
+        ${a.warn ? `<div class="lk-warn">⚠️ ${a.warn}</div>` : ""}
+      </div>` : ""}
+      <button class="btn ghost" onclick="goBack()">ย้อนกลับ</button>`;
   },
 
   "net-menu"() {
