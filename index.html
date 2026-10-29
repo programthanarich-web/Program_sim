@@ -274,17 +274,13 @@ const screens = {
         <div class="sub">เลือกวิธีที่สะดวกกับคุณ</div>
 
         <div class="menu-list">
-          <button class="menu-item" onclick="startFlow('self')">
-            <div class="mi">💳</div>
-            <div class="mt"><b>เติมเงินสมัครเน็ตเอง</b><span>เติมเงินและสมัครด้วยตัวเอง</span></div>
-            <div class="chev">›</div>
+          <button class="menu-item disabled">
+            <div class="mi">🗂️</div>
+            <div class="mt"><b>ลงทะเบียนซิม <span class="tag">เร็ว ๆ นี้</span></b><span>รายละเอียดจะแจ้งเพิ่มเติม</span></div>
           </button>
-          <button class="menu-item" onclick="startFlow('shop')">
-            <div class="mi">🏪</div>
-            <div class="mt">
-              <b>สมัครเน็ตกับทางร้าน <span class="tag green">ลด ${CONFIG.DISCOUNT_SHOP} บาท</span></b>
-              <span>ชำระผ่านสลิป ตรวจสอบอัตโนมัติ</span>
-            </div>
+          <button class="menu-item" onclick="go('net-menu')">
+            <div class="mi">📶</div>
+            <div class="mt"><b>สมัครแพ็กเกจเน็ต</b><span>เลือกเติมเงินเองหรือสมัครกับทางร้าน</span></div>
             <div class="chev">›</div>
           </button>
           <button class="menu-item disabled">
@@ -310,6 +306,31 @@ const screens = {
       </div>`;
   },
 
+  "net-menu"() {
+    hero.classList.add("hidden");
+    return `
+      <div class="card">
+        <div class="card-head"><div class="ic"></div><h2>สมัครแพ็กเกจเน็ต</h2></div>
+        <div class="sub">เลือกวิธีที่สะดวกกับคุณ</div>
+        <div class="menu-list">
+          <button class="menu-item" onclick="startFlow('self')">
+            <div class="mi">💳</div>
+            <div class="mt"><b>เติมเงินสมัครเน็ตเอง</b><span>เติมเงินและสมัครด้วยตัวเอง</span></div>
+            <div class="chev">›</div>
+          </button>
+          <button class="menu-item" onclick="startFlow('shop')">
+            <div class="mi">🏪</div>
+            <div class="mt">
+              <b>สมัครเน็ตกับทางร้าน <span class="tag green">ลด ${CONFIG.DISCOUNT_SHOP} บาท</span></b>
+              <span>ชำระผ่านสลิป ตรวจสอบอัตโนมัติ</span>
+            </div>
+            <div class="chev">›</div>
+          </button>
+        </div>
+        <button class="btn ghost" style="margin-top:12px" onclick="goBack()">ย้อนกลับ</button>
+      </div>`;
+  },
+
   "sim-form"() {
     hero.classList.add("hidden");
     const isShop = state.mode === "shop";
@@ -318,12 +339,14 @@ const screens = {
         <div class="card-head"><div class="ic"></div><h2>${isShop ? "สมัครเน็ตกับทางร้าน" : "เติมเงินสมัครเน็ตเอง"}</h2></div>
         <div class="sub">กรอกข้อมูลจากซิมที่ได้รับ</div>
 
-        ${sampleBlock()}
+        ${photoBlock("receivedPhoneEx", "ตัวอย่างเบอร์มือถือที่ได้รับหลังลงทะเบียน")}
 
-        <label class="field-label" for="phone">เบอร์มือถือ</label>
+        <label class="field-label" for="phone">เบอร์มือถือที่ได้รับหลังลงทะเบียน</label>
         <div class="input"><span class="i">📞</span>
           <input type="tel" id="phone" inputmode="numeric" maxlength="10" placeholder="081-234-5678" value="${state.phone}">
         </div>
+
+        ${photoBlock("simNumberEx", "ตัวอย่างหมายเลขซีเรียลซิม")}
 
         <label class="field-label" for="serial">หมายเลขซีเรียลซิมที่ได้รับ</label>
         <div class="input"><span class="i">🔢</span>
@@ -418,22 +441,39 @@ const screens = {
   }
 };
 
-// กล่องรูปตัวอย่างวิธีดูเลขซีเรียลซิม (รูปแก้ไขได้จากหลังบ้าน)
-function sampleBlock() {
-  const items = (CONFIG.SIM_SAMPLE_IMAGES || []).filter(i => i && i.url);
-  if (!items.length) {
-    return `<div class="sample"><div class="sample-empty">รูปตัวอย่างการดูเลขซีเรียลซิม<br>(ยังไม่ได้ตั้งค่า)</div></div>`;
+// กล่องรูปตัวอย่าง 1 รูป (รูปแก้ไขได้จากหลังบ้าน ตามคีย์ที่ส่งมา เช่น receivedPhoneEx, simNumberEx)
+function photoBlock(key, label) {
+  const url = (CONFIG.photos || {})[key];
+  if (!url) {
+    return `<div class="sample"><div class="sample-empty">${label}<br>(ยังไม่ได้ตั้งค่า)</div></div>`;
   }
   return `
     <div class="sample">
       <div class="sample-slides">
-        ${items.map(i => `
-          <figure>
-            <img src="${i.url}" alt="${i.caption || "ตัวอย่างซิม"}">
-            ${i.caption ? `<figcaption>${i.caption}</figcaption>` : ""}
-          </figure>`).join("")}
+        <figure>
+          <img src="${url}" alt="${label}">
+          <figcaption>${label}</figcaption>
+        </figure>
       </div>
     </div>`;
+}
+
+// ส่งข้อมูลเข้าไลน์ และแจ้งสาเหตุชัดเจนเมื่อไม่สำเร็จ
+async function sendLineStrict(payload) {
+  if (!CONFIG.LINE_ENDPOINT) throw new Error("ยังไม่ได้ตั้งค่าระบบ");
+  let res;
+  try {
+    res = await fetch(CONFIG.LINE_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: payload })
+    });
+  } catch (e) {
+    throw new Error("เชื่อมต่อระบบไม่ได้");
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.ok) throw new Error(data.reason || ("รหัสข้อผิดพลาด " + res.status));
+  return data;
 }
 
 function render(html) {
@@ -471,7 +511,7 @@ async function submitSim() {
   btn.disabled = true;
   btn.textContent = "กำลังส่งข้อมูล...";
   try {
-    await sendToLine({
+    await sendLineStrict({
       type: state.mode === "shop" ? "สมัครกับร้าน" : "เติมเงินสมัครเอง",
       serial, phone, time: new Date().toLocaleString("th-TH")
     });
@@ -479,7 +519,7 @@ async function submitSim() {
     state.phone = phone;
     go("packages");
   } catch (e) {
-    err.textContent = "ส่งข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
+    err.textContent = "ส่งข้อมูลไม่สำเร็จ: " + e.message;
     err.style.display = "block";
     btn.disabled = false;
     btn.textContent = "ยืนยันข้อมูล →";
