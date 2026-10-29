@@ -229,7 +229,8 @@ const CONFIG = {
   BACKEND_ENDPOINT: API_BASE + "/orders",        // ส่งข้อมูลการชำระเงินเข้าระบบหลังบ้าน
   SLIP_VERIFY_ENDPOINT: API_BASE + "/verify-slip",    // ตรวจสอบสลิปปลอมอัตโนมัติ
   SETTINGS_ENDPOINT: API_BASE + "/settings",       // ดึงการตั้งค่าจากหลังบ้าน (รูปตัวอย่าง, ราคา, ส่วนลด ฯลฯ) เป็น JSON
-  DISCOUNT_SHOP: 100,          // ส่วนลดสมัครกับทางร้าน (บาท)
+  DISCOUNT_SHOP: 100,
+  DISCOUNT_SHOP_TYPE: "baht",          // ส่วนลดสมัครกับทางร้าน (บาท)
   QR_IMAGE_URL: "",            // URL รูป QR พร้อมเพย์ของร้าน
   // รูปตัวอย่างวิธีดูเลขซีเรียลบนซิม แก้ไขได้จากหลังบ้าน (ว่างไว้ = แสดงกรอบว่าง)
   SIM_SAMPLE_IMAGES: [
@@ -244,14 +245,14 @@ async function loadRemoteSettings() {
     const res = await fetch(CONFIG.SETTINGS_ENDPOINT);
     const { PACKAGES: rp, SELF_STEPS: rs, ...rest } = await res.json();
     Object.assign(CONFIG, rest);
-    if (USE_REMOTE_PACKAGES && Array.isArray(rp)) PACKAGES = rp;
+    if (USE_REMOTE_PACKAGES && Array.isArray(rp) && rp.length) PACKAGES = rp;
     if (Array.isArray(rs)) SELF_STEPS = rs;
     applyHero();
   } catch (e) { /* ใช้ค่าเริ่มต้นในโค้ดแทน */ }
 }
 
-// ใช้ค่าแพ็กเกจจากโค้ดนี้ก่อน (false) — ถ้าจะให้ดึงจากหลังบ้านให้เปลี่ยนเป็น true
-const USE_REMOTE_PACKAGES = false;
+// true = ดึงแพ็กเกจจากหลังบ้าน (ถ้าหลังบ้านว่าง จะใช้ค่าในโค้ดนี้แทน)
+const USE_REMOTE_PACKAGES = true;
 
 // แพ็กเกจเน็ต — แก้ราคา/รหัสได้ที่นี่ (code = รหัสสมัครที่ใช้จริง ต้องแก้ให้ตรงกับของร้าน)
 let PACKAGES = [
@@ -280,6 +281,24 @@ const app = document.getElementById("app");
 const backBtn = document.getElementById("backBtn");
 const hero = document.getElementById("hero");
 const HERO_DEFAULT = hero.innerHTML;
+
+// ข้อความส่วนลดร้านแบบรวม (ใช้ในเมนูหน้าแรก)
+function globalDiscountLabel() {
+  return CONFIG.DISCOUNT_SHOP_TYPE === "percent" ? `${CONFIG.DISCOUNT_SHOP}%` : `${CONFIG.DISCOUNT_SHOP} บาท`;
+}
+
+// ส่วนลดร้านของแต่ละแพ็กเกจ
+// discType: "" = ใช้ค่ากลาง, "none" = ไม่ลด, "baht" = ลดเป็นบาท, "percent" = ลดเป็นเปอร์เซ็นต์
+function shopDiscountInfo(p) {
+  const useDefault = !p.discType;
+  const type = useDefault ? (CONFIG.DISCOUNT_SHOP_TYPE || "baht") : p.discType;
+  if (type === "none") return { amount: 0, label: "" };
+  const value = Number(useDefault ? CONFIG.DISCOUNT_SHOP : p.discValue) || 0;
+  const raw = type === "percent" ? Math.round(p.price * value / 100) : value;
+  const amount = Math.min(Math.max(raw, 0), p.price);
+  const label = type === "percent" ? `${value}%` : `${value} บาท`;
+  return { amount, label };
+}
 
 // ถ้าหลังบ้านตั้ง "รูปหัวเว็บ" ไว้ จะแสดงรูปนั้นแทนหัวข้อแบบข้อความ
 function applyHero() {
@@ -376,7 +395,7 @@ const screens = {
           <button class="menu-item" onclick="startFlow('shop')">
             <div class="mi">🏪</div>
             <div class="mt">
-              <b>สมัครเน็ตกับทางร้าน <span class="tag green">ลด ${CONFIG.DISCOUNT_SHOP} บาท</span></b>
+              <b>สมัครเน็ตกับทางร้าน <span class="tag green">ลด ${globalDiscountLabel()}</span></b>
               <span>ชำระผ่านสลิป ตรวจสอบอัตโนมัติ</span>
             </div>
             <div class="chev">›</div>
@@ -439,9 +458,10 @@ const screens = {
           <span class="pk-more">ดูรายละเอียดทั้งหมด →</span>
         </div>
         ${PACKAGES.map(p => {
-          const net = Math.max(p.price - CONFIG.DISCOUNT_SHOP, 0);
+          const info = shopDiscountInfo(p);
+          const net = p.price - info.amount;
           const priceHtml = isShop
-            ? `<div class="plan-price"><s>${p.price}</s>${net} <small>บาท/เดือน</small><span class="plan-off">ส่วนลดร้าน ${CONFIG.DISCOUNT_SHOP} บาท</span></div>`
+            ? `<div class="plan-price"><s>${p.price}</s>${net} <small>บาท/เดือน</small>${info.amount ? `<span class="plan-off">ส่วนลดร้าน ${info.label}</span>` : ""}</div>`
             : `<div class="plan-price">${p.price} <small>บาท/เดือน</small></div>`;
           return `
           <div class="plan" style="--c:${p.color || "#0b5ed7"}">
@@ -478,14 +498,15 @@ const screens = {
   payment() {
     hero.classList.add("hidden");
     const p = state.pkg;
-    const net = Math.max(p.price - CONFIG.DISCOUNT_SHOP, 0);
+    const info = shopDiscountInfo(p);
+    const net = p.price - info.amount;
     return `
       <div class="card">
         <div class="card-head"><div class="ic"></div><h2>ชำระค่าแพ็กเกจเน็ต</h2></div>
         <div class="info">
           <div><span>แพ็กเกจ</span><b>${p.name}</b></div>
           <div><span>ราคาปกติ</span><span>${p.price} บาท</span></div>
-          <div><span>ส่วนลดร้าน</span><span>- ${CONFIG.DISCOUNT_SHOP} บาท</span></div>
+          <div><span>ส่วนลดร้าน</span><span>- ${info.amount} บาท</span></div>
           <div class="total"><span>ยอดชำระ</span><span>${net} บาท</span></div>
         </div>
         <div class="qr">${CONFIG.QR_IMAGE_URL
@@ -620,7 +641,7 @@ async function submitPayment() {
       render(screens.result(false, check.reason || "สลิปไม่ถูกต้องหรือไม่สามารถตรวจสอบได้"));
       return;
     }
-    const amount = Math.max(state.pkg.price - CONFIG.DISCOUNT_SHOP, 0);
+    const amount = state.pkg.price - shopDiscountInfo(state.pkg).amount;
     await postJSON(CONFIG.BACKEND_ENDPOINT, {
       serial: state.serial, phone: state.phone,
       package: state.pkg, amount, time: new Date().toISOString()
