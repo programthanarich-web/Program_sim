@@ -183,12 +183,15 @@
 /* ==========================================================
    ตั้งค่าหลังบ้าน (แก้ไขได้ที่นี่ / เชื่อม API ภายหลัง)
    ========================================================== */
+// URL ของ Worker (หลังบ้านกลาง) — แทน programthanarich ด้วยชื่อบัญชี Cloudflare ของคุณ
+const API_BASE = "https://program-api.programthanarich.workers.dev";
+
 const CONFIG = {
   // LINE Notify ปิดให้บริการแล้ว (31 มี.ค. 2568) ควรใช้ LINE Messaging API ฝั่งเซิร์ฟเวอร์แทน
-  LINE_ENDPOINT: "",
-  BACKEND_ENDPOINT: "",        // ส่งข้อมูลการชำระเงินเข้าระบบหลังบ้าน
-  SLIP_VERIFY_ENDPOINT: "",    // ตรวจสอบสลิปปลอมอัตโนมัติ
-  SETTINGS_ENDPOINT: "",       // ดึงการตั้งค่าจากหลังบ้าน (รูปตัวอย่าง, ราคา, ส่วนลด ฯลฯ) เป็น JSON
+  LINE_ENDPOINT: API_BASE + "/line",
+  BACKEND_ENDPOINT: API_BASE + "/orders",        // ส่งข้อมูลการชำระเงินเข้าระบบหลังบ้าน
+  SLIP_VERIFY_ENDPOINT: API_BASE + "/verify-slip",    // ตรวจสอบสลิปปลอมอัตโนมัติ
+  SETTINGS_ENDPOINT: API_BASE + "/settings",       // ดึงการตั้งค่าจากหลังบ้าน (รูปตัวอย่าง, ราคา, ส่วนลด ฯลฯ) เป็น JSON
   DISCOUNT_SHOP: 100,          // ส่วนลดสมัครกับทางร้าน (บาท)
   QR_IMAGE_URL: "",            // URL รูป QR พร้อมเพย์ของร้าน
   // รูปตัวอย่างวิธีดูเลขซีเรียลบนซิม แก้ไขได้จากหลังบ้าน (ว่างไว้ = แสดงกรอบว่าง)
