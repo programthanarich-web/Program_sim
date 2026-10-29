@@ -29,19 +29,27 @@
   .back-btn.show{display:inline-block}
 
   /* ---------- Hero ---------- */
-  .hero{background:linear-gradient(135deg,var(--blue-d) 0%,var(--blue) 55%,var(--blue-l) 100%);color:#fff;padding:22px 20px 26px;position:relative;overflow:hidden}
-  .hero::after{content:"";position:absolute;right:-60px;top:-40px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.08)}
-  .hero h1{font-size:26px;font-weight:800;line-height:1.25;position:relative;z-index:1}
+  .hero{background:linear-gradient(115deg,#0a3f9e 0%,#0b5ed7 50%,#1d7cf2 100%);color:#fff;padding:22px 18px 18px;position:relative;overflow:hidden}
+  .hero::before{content:"";position:absolute;right:-90px;top:-70px;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.25),rgba(255,255,255,0) 70%);pointer-events:none}
+  .hero::after{content:"";position:absolute;left:-40px;bottom:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(255,194,51,.25),rgba(255,194,51,0) 70%);pointer-events:none}
+  .hero-text{position:relative;z-index:1}
+  .hero h1{font-size:24px;font-weight:800;line-height:1.3}
   .hero h1 .hl{color:var(--yellow);display:block;font-size:22px}
-  .hero p.desc{font-size:13px;opacity:.9;margin:10px 0 14px;max-width:240px;position:relative;z-index:1}
-  .carriers{display:flex;gap:6px;flex-wrap:wrap;position:relative;z-index:1}
-  .carrier{background:#fff;color:var(--blue-d);font-size:12px;font-weight:700;padding:4px 10px;border-radius:8px}
+  .hero-brand{display:block;font-size:15px;font-weight:600;margin-top:4px}
+  .hero p.desc{font-size:12.5px;opacity:.95;margin:10px 0 0}
+  .hero-art{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;position:relative;z-index:1}
+  .phone-art{width:112px;height:168px;flex-shrink:0;background:linear-gradient(160deg,#2a6cf0,#0a2a7a);border-radius:18px;border:3px solid #0b1f56;box-shadow:0 14px 26px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;transform:rotate(-6deg)}
+  .phone-art span{color:#fff;font-size:34px;font-weight:900;font-style:italic;text-shadow:0 2px 8px rgba(0,0,0,.35)}
+  .carriers{display:flex;flex-direction:column;gap:7px;width:150px}
+  .carrier{background:#fff;color:var(--blue-d);font-size:15px;font-weight:800;padding:8px 10px;border-radius:12px;text-align:center;box-shadow:0 4px 10px rgba(0,0,0,.12)}
+  .hero-tag{font-size:15px;font-weight:700;text-align:center;margin-top:8px;line-height:1.2;color:#fff}
   .perks{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px;position:relative;z-index:1}
-  .perk{font-size:11px;background:rgba(255,255,255,.12);border-radius:10px;padding:8px 6px;display:flex;flex-direction:column;gap:4px}
+  .perk{font-size:11px;background:rgba(255,255,255,.14);border-radius:12px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px;line-height:1.35}
+  .perk .pi{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:4px}
   .perk b{font-size:12px}
-  .phone-art{position:absolute;right:14px;top:22px;width:92px;height:150px;background:#0a2a5e;border-radius:18px;border:4px solid #1d3f7a;box-shadow:0 10px 25px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;transform:rotate(8deg);z-index:0}
-  .phone-art span{color:#fff;font-size:30px;font-weight:900;font-style:italic;text-shadow:0 2px 6px rgba(0,0,0,.3)}
-  .hero h1, .hero p.desc, .carriers, .perks{max-width:calc(100% - 100px)}
+  .hero-photo{padding:0;background:none}
+  .hero-photo::before,.hero-photo::after{display:none}
+  .hero-img{display:block;width:100%;height:auto}
 
   /* ---------- Cards ---------- */
   main{padding:14px 14px 0}
@@ -107,6 +115,28 @@
   .pkg .price s{display:block;font-size:12px;color:var(--muted);font-weight:500}
   .pkg .off{display:inline-block;margin-top:4px;background:#dcf6e6;color:var(--ok);font-size:11px;font-weight:700;padding:2px 7px;border-radius:99px}
 
+  /* ---------- การ์ดแพ็กเกจ ---------- */
+  .plan{position:relative;border:2px solid var(--c);border-radius:16px;padding:18px 16px 16px;margin:14px 0 6px;background:#fff}
+  .plan-badge{position:absolute;top:-12px;left:14px;background:#e53935;color:#fff;font-size:12px;font-weight:700;padding:3px 12px;border-radius:99px}
+  .plan-speed{font-size:26px;font-weight:800;color:var(--c);line-height:1.2}
+  .plan-desc{font-size:14px;color:var(--c);font-weight:600;margin:2px 0 8px}
+  .plan-price{font-size:26px;font-weight:800;color:var(--c)}
+  .plan-price small{font-size:13px;font-weight:600}
+  .plan-price s{font-size:14px;color:var(--muted);font-weight:500;margin-right:6px}
+  .plan-off{display:inline-block;background:#dcf6e6;color:var(--ok);font-size:11px;font-weight:700;padding:2px 7px;border-radius:99px;margin-left:6px;vertical-align:middle}
+  .plan-feat{list-style:none;margin:10px 0 14px;padding:0}
+  .plan-feat li{font-size:14px;color:var(--text);padding:4px 0 4px 24px;position:relative}
+  .plan-feat li::before{content:"✓";position:absolute;left:0;top:4px;color:var(--c);font-weight:800}
+  .plan-btn{width:100%;border:0;border-radius:12px;background:var(--c);color:#fff;font-weight:700;font-size:15px;padding:12px;cursor:pointer}
+
+  /* ---------- หัวข้อแพ็กเกจ ---------- */
+  .pk-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:4px}
+  .pk-title{display:flex;align-items:center;gap:10px}
+  .pk-gift{font-size:26px;line-height:1}
+  .pk-title h2{font-size:18px;color:#0b3d91;font-weight:800;line-height:1.2}
+  .pk-sub{font-size:13px;color:var(--muted)}
+  .pk-more{font-size:13px;color:var(--blue);font-weight:600;white-space:nowrap;margin-top:4px}
+
   .info{background:#f7f9fc;border-radius:12px;padding:12px 14px;font-size:14px;margin:10px 0}
   .info div{display:flex;justify-content:space-between;padding:4px 0}
   .info .total{border-top:1px dashed var(--line);margin-top:6px;padding-top:8px;font-weight:800}
@@ -157,21 +187,28 @@
 
 <!-- ============ Hero (แสดงเฉพาะหน้าแรก) ============ -->
 <section class="hero" id="hero">
-  <div class="phone-art"><span>5G</span></div>
-  <h1>สมัครแพ็กเกจเน็ต
-    <span class="hl">ง่ายๆ ผ่านเบอร์มือถือ</span>
-    กับ ProgramThanarich
-  </h1>
-  <p class="desc">เน็ตแรง ครบทุกการใช้งาน ทั้งเล่นเว็บ ดูหนัง ฟังเพลง ไม่สะดุด</p>
-  <div class="carriers">
-    <span class="carrier">truemove H</span>
-    <span class="carrier">AIS</span>
-    <span class="carrier">dtac</span>
+  <div class="hero-text">
+    <h1>สมัครแพ็กเกจเน็ต
+      <span class="hl">ง่ายๆ ผ่านเบอร์มือถือ</span>
+      <span class="hero-brand">กับ ProgramThanarich</span>
+    </h1>
+    <p class="desc">เน็ตแรง ครบทุกการใช้งาน ทั้งเล่นเว็บ ดูหนัง ฟังเพลง ไม่สะดุด</p>
+  </div>
+  <div class="hero-art">
+    <div class="phone-art"><span>5G</span></div>
+    <div>
+      <div class="carriers">
+        <span class="carrier">truemove H</span>
+        <span class="carrier">AIS</span>
+        <span class="carrier">dtac</span>
+      </div>
+      <div class="hero-tag">เน็ตแรง<br>ทั่วไทย</div>
+    </div>
   </div>
   <div class="perks">
-    <div class="perk"><b>⚡ สมัครง่าย</b>ไม่ต้องเดินทาง</div>
-    <div class="perk"><b>🛡️ ปลอดภัย</b>ข้อมูลส่วนตัวเป็นความลับ</div>
-    <div class="perk"><b>🎧 ดูแลลอด</b>ทีมงานพร้อมช่วยเหลือ</div>
+    <div class="perk"><span class="pi">⚡</span><b>สมัครง่าย</b>ไม่ต้องเดินทาง</div>
+    <div class="perk"><span class="pi">🛡️</span><b>ปลอดภัย</b>ข้อมูลส่วนตัวไม่รั่วไหล</div>
+    <div class="perk"><span class="pi">🎧</span><b>มีทีมซัพพอร์ต</b>ดูแลตลอดการใช้งาน</div>
   </div>
 </section>
 
@@ -207,16 +244,22 @@ async function loadRemoteSettings() {
     const res = await fetch(CONFIG.SETTINGS_ENDPOINT);
     const { PACKAGES: rp, SELF_STEPS: rs, ...rest } = await res.json();
     Object.assign(CONFIG, rest);
-    if (Array.isArray(rp)) PACKAGES = rp;
+    if (USE_REMOTE_PACKAGES && Array.isArray(rp)) PACKAGES = rp;
     if (Array.isArray(rs)) SELF_STEPS = rs;
+    applyHero();
   } catch (e) { /* ใช้ค่าเริ่มต้นในโค้ดแทน */ }
 }
 
-// แพ็กเกจเน็ต (ราคาและรายละเอียดปรับได้จากหลังบ้าน) — ค่าตัวอย่าง
+// ใช้ค่าแพ็กเกจจากโค้ดนี้ก่อน (false) — ถ้าจะให้ดึงจากหลังบ้านให้เปลี่ยนเป็น true
+const USE_REMOTE_PACKAGES = false;
+
+// แพ็กเกจเน็ต — แก้ราคา/รหัสได้ที่นี่ (code = รหัสสมัครที่ใช้จริง ต้องแก้ให้ตรงกับของร้าน)
 let PACKAGES = [
-  { id: "P1", name: "เน็ต 7 วัน 5 GB",    price: 99,  code: "NET7D5" },
-  { id: "P2", name: "เน็ต 30 วัน 20 GB",  price: 299, code: "NET30D20" },
-  { id: "P3", name: "เน็ต 30 วัน ไม่อั้น", price: 499, code: "NETUNL30" }
+  { id: "P1", name: "30 Mbps เน็ตไม่อั้น ไม่ลดความเร็ว", speed: "30 Mbps", desc: "เน็ตไม่อั้น ไม่ลดความเร็ว", price: 235, code: "NET30M", color: "#0b5ed7", badge: "แนะนำสุดคุ้ม", features: ["เน็ตไม่อั้น", "ความเร็ว 30 Mbps", "ไม่มีสัญญา"] },
+  { id: "P2", name: "20 Mbps เน็ตไม่อั้น ไม่ลดความเร็ว", speed: "20 Mbps", desc: "เน็ตไม่อั้น ไม่ลดความเร็ว", price: 230, code: "NET20M", color: "#12a150", features: ["เน็ตไม่อั้น", "ความเร็ว 20 Mbps", "ไม่มีสัญญา"] },
+  { id: "P3", name: "10 Mbps เน็ตไม่อั้น ไม่ลดความเร็ว", speed: "10 Mbps", desc: "เน็ตไม่อั้น ไม่ลดความเร็ว", price: 300, code: "NET10M", color: "#6d3be0", features: ["เน็ตไม่อั้น", "ความเร็ว 10 Mbps", "ไม่มีสัญญา"] },
+  { id: "P4", name: "4 Mbps เน็ตไม่อั้น", speed: "4 Mbps", desc: "เน็ตไม่อั้น", price: 107, code: "NET4M", color: "#f57c00", features: ["เน็ตไม่อั้น", "ความเร็ว 4 Mbps", "ไม่มีสัญญา"] },
+  { id: "P5", name: "20 Mbps โทรฟรีทุกเครือข่าย", speed: "20 Mbps", desc: "โทรฟรีทุกเครือข่าย", price: 350, code: "NET20CALL", color: "#e0306b", features: ["เน็ตไม่อั้น", "ความเร็ว 20 Mbps", "โทรฟรีทุกเครือข่าย"] }
 ];
 
 // ขั้นตอนสมัครเน็ต (ตัวอย่าง — แก้ให้ตรงกับของจริง)
@@ -236,6 +279,18 @@ let state = { serial: "", phone: "", pkg: null, mode: null };
 const app = document.getElementById("app");
 const backBtn = document.getElementById("backBtn");
 const hero = document.getElementById("hero");
+const HERO_DEFAULT = hero.innerHTML;
+
+// ถ้าหลังบ้านตั้ง "รูปหัวเว็บ" ไว้ จะแสดงรูปนั้นแทนหัวข้อแบบข้อความ
+function applyHero() {
+  if (CONFIG.heroImage) {
+    hero.classList.add("hero-photo");
+    hero.innerHTML = `<img class="hero-img" src="${CONFIG.heroImage}" alt="ProgramThanarich">`;
+  } else {
+    hero.classList.remove("hero-photo");
+    hero.innerHTML = HERO_DEFAULT;
+  }
+}
 
 function go(screen) { history_.push(screen); render(); window.scrollTo(0, 0); }
 function goBack()   { if (history_.length > 1) history_.pop(); render(); window.scrollTo(0, 0); }
@@ -373,17 +428,32 @@ const screens = {
     const isShop = state.mode === "shop";
     return `
       <div class="card">
-        <div class="card-head"><div class="ic"></div><h2>เลือกแพ็กเกจเน็ต</h2></div>
-        <div class="sub">แพ็กเกจที่ให้บริการ</div>
+        <div class="pk-head">
+          <div class="pk-title">
+            <span class="pk-gift">🎁</span>
+            <div>
+              <h2>แพ็กเกจที่ให้บริการ</h2>
+              <div class="pk-sub">เลือกแพ็กเกจที่ใช่ สำหรับคุณ</div>
+            </div>
+          </div>
+          <span class="pk-more">ดูรายละเอียดทั้งหมด →</span>
+        </div>
         ${PACKAGES.map(p => {
           const net = Math.max(p.price - CONFIG.DISCOUNT_SHOP, 0);
+          const priceHtml = isShop
+            ? `<div class="plan-price"><s>${p.price}</s>${net} <small>บาท/เดือน</small><span class="plan-off">ส่วนลดร้าน ${CONFIG.DISCOUNT_SHOP} บาท</span></div>`
+            : `<div class="plan-price">${p.price} <small>บาท/เดือน</small></div>`;
           return `
-          <button class="pkg" onclick="selectPackage('${p.id}')">
-            <div><b>${p.name}</b>${isShop ? `<span class="off">ส่วนลดร้าน ${CONFIG.DISCOUNT_SHOP} บาท</span>` : ""}</div>
-            <div class="price">
-              ${isShop ? `<s>${p.price} บาท</s>${net} บาท` : `${p.price} บาท`}
-            </div>
-          </button>`;
+          <div class="plan" style="--c:${p.color || "#0b5ed7"}">
+            ${p.badge ? `<span class="plan-badge">${p.badge}</span>` : ""}
+            <div class="plan-speed">${p.speed || p.name}</div>
+            <div class="plan-desc">${p.desc || ""}</div>
+            ${priceHtml}
+            <ul class="plan-feat">
+              ${(p.features || []).map(f => `<li>${f}</li>`).join("")}
+            </ul>
+            <button class="plan-btn" onclick="selectPackage('${p.id}')">เลือกแพ็กเกจ →</button>
+          </div>`;
         }).join("")}
       </div>`;
   },
