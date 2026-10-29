@@ -500,6 +500,9 @@ function validSim(serial, phone) {
   return null;
 }
 
+// ปิดการส่งข้อความเข้า LINE ชั่วคราว (ตั้งเป็น false เมื่อพร้อมเปิดใช้งาน)
+const SKIP_LINE_SEND = true;
+
 async function submitSim() {
   const serial = document.getElementById("serial").value.trim();
   const phone = document.getElementById("phone").value.replace(/[-\s]/g, "").trim();
@@ -511,10 +514,12 @@ async function submitSim() {
   btn.disabled = true;
   btn.textContent = "กำลังส่งข้อมูล...";
   try {
-    await sendLineStrict({
-      type: state.mode === "shop" ? "สมัครกับร้าน" : "เติมเงินสมัครเอง",
-      serial, phone, time: new Date().toLocaleString("th-TH")
-    });
+    if (!SKIP_LINE_SEND) {
+      await sendLineStrict({
+        type: state.mode === "shop" ? "สมัครกับร้าน" : "เติมเงินสมัครเอง",
+        serial, phone, time: new Date().toLocaleString("th-TH")
+      });
+    }
     state.serial = serial;
     state.phone = phone;
     go("packages");
