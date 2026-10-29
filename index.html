@@ -142,6 +142,7 @@
   .lk-box{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;border:1px solid #d4a43a}
   .lk-price{margin-top:10px;background:linear-gradient(90deg,#06203f,#0d3d7a,#06203f);color:#f5c94a;text-align:center;font-weight:800;font-size:18px;padding:9px;border-radius:10px}
   .lk-foot{background:#0d4a94;color:#fff;font-size:12px;font-weight:700;text-align:center;padding:8px;margin:10px -8px 0}
+  .lk-logo{height:22px;width:auto;max-width:90px;object-fit:contain}
 
   /* ---------- Banner ---------- */
   .banner{background:linear-gradient(90deg,var(--blue-d),var(--blue-l));color:#fff;border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
@@ -351,7 +352,7 @@ function luckyCard() {
             <div class="lk-card" onclick="openLucky(${i})">
               <div class="lk-top-row">
                 ${x.featured ? `<span class="lk-badge">แนะนำ</span>` : `<span></span>`}
-                <span class="lk-carrier">${x.carrier || ""}</span>
+                ${carrierHtml(x.carrier)}
               </div>
               <div class="lk-pill">เติมเงิน</div>
               <div class="lk-phone">${fmtNumber(x.number)}</div>
@@ -480,6 +481,13 @@ function tagStyle(t) {
 
 function priceLabel(x) {
   return Number(x.price) > 0 ? Number(x.price).toLocaleString("th-TH") + " ฿" : "สอบถามราคา";
+}
+
+// โลโก้เครือข่าย (ถ้าหลังบ้านตั้งโลโก้ไว้จะแสดงรูป ถ้าไม่มีจะแสดงชื่อเครือข่าย)
+function carrierHtml(name) {
+  const url = (CONFIG.carrierLogos || {})[name];
+  if (url) return `<img class="lk-logo" src="${url}" alt="${name}">`;
+  return `<span class="lk-carrier">${name || ""}</span>`;
 }
 
 function openLucky(i) {
