@@ -186,7 +186,10 @@
   .info .total{border-top:1px dashed var(--line);margin-top:6px;padding-top:8px;font-weight:800}
   .info .total span:last-child{color:var(--blue);font-size:17px}
 
-  .qr{width:180px;height:180px;margin:12px auto;background:#eef3fa;border:1px dashed #b9c8de;border-radius:14px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;text-align:center;overflow:hidden}
+  .qr{margin:12px auto;width:100%;max-width:280px}
+  .qr img{width:100%;height:auto;display:block}
+  .qr-empty{width:180px;height:180px;margin:0 auto;background:#eef3fa;border:1px dashed #b9c8de;border-radius:14px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;text-align:center}
+  .qr-dl{display:block;width:100%;max-width:280px;margin:10px auto 0;background:#0d4a94;color:#fff;border:0;border-radius:12px;padding:11px;font-size:14px;font-weight:700;cursor:pointer}
   .file-input{width:100%;margin-top:6px;font-size:14px;font-family:inherit}
 
   .code-box{background:#eaf2ff;border:2px dashed var(--blue);border-radius:14px;padding:14px;text-align:center;margin:12px 0}
@@ -769,8 +772,9 @@ const screens = {
           <div class="total"><span>ยอดชำระ</span><span>${net} บาท</span></div>
         </div>
         <div class="qr">${CONFIG.QR_IMAGE_URL
-          ? `<img src="${CONFIG.QR_IMAGE_URL}" style="width:100%;height:100%">`
-          : "QR พร้อมเพย์"}</div>
+          ? `<img src="${CONFIG.QR_IMAGE_URL}" alt="QR พร้อมเพย์">`
+          : `<div class="qr-empty">QR พร้อมเพย์</div>`}</div>
+        ${CONFIG.QR_IMAGE_URL ? `<button type="button" class="qr-dl" onclick="downloadQR()">⬇ ดาวน์โหลด QR Code</button>` : ""}
         <label class="field-label" for="slip">แนบสลิปการโอนเงิน</label>
         <input type="file" id="slip" accept="image/*" class="file-input"
                onchange="document.getElementById('payErr').style.display='none'">
@@ -851,6 +855,27 @@ function validSim(serial, phone) {
 }
 
 // ปิดการส่งข้อความเข้า LINE ชั่วคราว (ตั้งเป็น false เมื่อพร้อมเปิดใช้งาน)
+// ดาวน์โหลดรูป QR พร้อมเพย์ไปชำระเงินในแอปธนาคาร (ถ้าดาวน์โหลดตรงไม่ได้ จะเปิดรูปในแท็บใหม่แทน)
+async function downloadQR() {
+  const url = CONFIG.QR_IMAGE_URL;
+  if (!url) return;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("fetch failed");
+    const blob = await res.blob();
+    const objUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = objUrl;
+    a.download = "promptpay-qr.png";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(objUrl), 1000);
+  } catch (e) {
+    window.open(url, "_blank");
+  }
+}
+
 const SKIP_LINE_SEND = true;
 
 async function submitSim() {
