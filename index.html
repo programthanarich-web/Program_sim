@@ -143,6 +143,10 @@
   .lk-price{margin-top:10px;background:linear-gradient(90deg,#06203f,#0d3d7a,#06203f);color:#f5c94a;text-align:center;font-weight:800;font-size:18px;padding:9px;border-radius:10px}
   .lk-foot{background:#0d4a94;color:#fff;font-size:12px;font-weight:700;text-align:center;padding:8px;margin:10px -8px 0}
   .lk-logo{height:30px;width:auto;max-width:110px;object-fit:contain}
+  .so-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+  .so-box{background:#fff;border-radius:16px;padding:22px 18px;max-width:340px;width:100%;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+  .so-box h3{margin:0 0 8px;font-size:18px}
+  .so-box p{font-size:14px;color:var(--muted);line-height:1.6;margin:0 0 16px}
   .lk-text p{font-size:13.5px;line-height:1.7;margin:6px 0;color:var(--text)}
 
   /* ---------- Banner ---------- */
@@ -488,6 +492,18 @@ function priceLabel(x) {
 }
 
 // โลโก้เครือข่าย (ถ้าหลังบ้านตั้งโลโก้ไว้จะแสดงรูป ถ้าไม่มีจะแสดงชื่อเครือข่าย)
+// ข้อความหน้าเมนูสมัคร (แก้ได้ที่หลังบ้าน > การตั้งค่า) ถ้าเว้นว่างจะใช้ข้อความเดิม
+const MENU_TEXT_DEFAULT = {
+  menuTitle: "สมัครแพ็กเกจเน็ต",
+  selfTitle: "เติมเงินสมัครเน็ตเอง",
+  selfDesc: "เติมเงินและสมัครด้วยตัวเอง",
+  shopTitle: "สมัครเน็ตกับทางร้าน",
+  shopDesc: "ชำระผ่านสลิป ตรวจสอบอัตโนมัติ"
+};
+function menuText(k) {
+  return (CONFIG.menuTexts && CONFIG.menuTexts[k]) || MENU_TEXT_DEFAULT[k];
+}
+
 function carrierHtml(name) {
   const url = (CONFIG.carrierLogos || {})[name];
   if (url) return `<img class="lk-logo" src="${url}" alt="${name}">`;
@@ -639,19 +655,19 @@ const screens = {
     hero.classList.add("hidden");
     return `
       <div class="card">
-        <div class="card-head"><div class="ic"></div><h2>สมัครแพ็กเกจเน็ต</h2></div>
+        <div class="card-head"><div class="ic"></div><h2>${menuText("menuTitle")}</h2></div>
         <div class="sub">เลือกวิธีที่สะดวกกับคุณ</div>
         <div class="menu-list">
           <button class="menu-item" onclick="startFlow('self')">
             <div class="mi">💳</div>
-            <div class="mt"><b>เติมเงินสมัครเน็ตเอง</b><span>เติมเงินและสมัครด้วยตัวเอง</span></div>
+            <div class="mt"><b>${menuText("selfTitle")}</b><span>${menuText("selfDesc")}</span></div>
             <div class="chev">›</div>
           </button>
           <button class="menu-item" onclick="startFlow('shop')">
             <div class="mi">🏪</div>
             <div class="mt">
-              <b>สมัครเน็ตกับทางร้าน <span class="tag green">ลด ${globalDiscountLabel()}</span></b>
-              <span>ชำระผ่านสลิป ตรวจสอบอัตโนมัติ</span>
+              <b>${menuText("shopTitle")} <span class="tag green">ลด ${globalDiscountLabel()}</span></b>
+              <span>${menuText("shopDesc")}</span>
             </div>
             <div class="chev">›</div>
           </button>
@@ -665,7 +681,7 @@ const screens = {
     const isShop = state.mode === "shop";
     return `
       <div class="card">
-        <div class="card-head"><div class="ic"></div><h2>${isShop ? "สมัครเน็ตกับทางร้าน" : "เติมเงินสมัครเน็ตเอง"}</h2></div>
+        <div class="card-head"><div class="ic"></div><h2>${isShop ? menuText("shopTitle") : menuText("selfTitle")}</h2></div>
         <div class="sub">กรอกข้อมูลจากซิมที่ได้รับ</div>
 
         ${photoBlock("receivedPhoneEx", "ตัวอย่างเบอร์มือถือที่ได้รับหลังลงทะเบียน")}
@@ -897,7 +913,12 @@ async function submitSim() {
     }
     state.serial = serial;
     state.phone = phone;
-    go("packages");
+    if (state.skipToPayment) {
+      state.skipToPayment = false;
+      go("payment");
+    } else {
+      go("packages");
+    }
   } catch (e) {
     err.textContent = "ส่งข้อมูลไม่สำเร็จ: " + e.message;
     err.style.display = "block";
@@ -907,8 +928,46 @@ async function submitSim() {
 }
 
 function selectPackage(id) {
-  state.pkg = PACKAGES.find(p => p.id === id);
+  const p = PACKAGES.find(x => x.id === id);
+  state.pkg = p;
+  // แพ็กเกจที่ต้องสมัครกับทางร้านเท่านั้น: ลูกค้าเมนูเองจะเห็นป๊อปอัปแทนขั้นตอนสมัครเอง
+  if (state.mode !== "shop" && p.shopOnly) {
+    showShopOnlyPopup(p);
+    return;
+  }
   go(state.mode === "shop" ? "payment" : "self-detail");
+}
+
+function showShopOnlyPopup(p) {
+  closeShopOnly();
+  const el = document.createElement("div");
+  el.id = "shopOnlyPop";
+  el.className = "so-overlay";
+  el.innerHTML = `
+    <div class="so-box">
+      <h3>แพ็กเกจนี้ต้องสมัครกับทางร้านเท่านั้น</h3>
+      <p>${p.name} ไม่สามารถสมัครเองได้ กดปุ่มด้านล่างเพื่อชำระค่าแพ็กเกจเน็ต</p>
+      <button class="btn" onclick="payShopOnly('${p.id}')">ชำระค่าแพ็กเกจเน็ต →</button>
+      <button class="btn ghost" style="margin-top:10px" onclick="closeShopOnly()">ปิด</button>
+    </div>`;
+  document.body.appendChild(el);
+}
+
+function closeShopOnly() {
+  const el = document.getElementById("shopOnlyPop");
+  if (el) el.remove();
+}
+
+function payShopOnly(id) {
+  closeShopOnly();
+  state.mode = "shop";
+  state.pkg = PACKAGES.find(p => p.id === id);
+  if (state.serial && state.phone) {
+    go("payment");
+  } else {
+    state.skipToPayment = true;
+    go("sim-form");
+  }
 }
 
 async function submitPayment() {
