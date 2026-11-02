@@ -800,13 +800,17 @@ const screens = {
       </div>`;
   },
 
-  result(ok, msg) {
+  result(ok, msg, showContact = false) {
     hero.classList.add("hidden");
+    const line = !ok && showContact && CONFIG.lineContactUrl
+      ? `<a class="btn" href="${CONFIG.lineContactUrl}" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;background:#06c755;margin-top:10px">💬 ติดต่อร้านผ่าน LINE</a>`
+      : "";
     return `
       <div class="card result">
         <div class="icon">${ok ? "✅" : "❌"}</div>
         <h2>${ok ? "ชำระเงินสำเร็จ" : "ดำเนินการไม่สำเร็จ"}</h2>
         <p>${msg}</p>
+        ${line}
         <button class="btn" onclick="resetTo('home')">กลับหน้าหลัก</button>
       </div>`;
   }
@@ -1051,11 +1055,14 @@ async function submitPayment() {
       serial: state.serial, phone: state.phone,
       package: state.pkg, amount, time: new Date().toISOString()
     });
-    await sendToLine({ type: "ชำระเงินสำเร็จ", serial: state.serial, phone: state.phone, package: state.pkg.name });
+    // แจ้งไลน์ร้านเป็นเรื่องรอง ถ้าพลาดไม่ควรทำให้ลูกค้าเห็นว่าชำระไม่สำเร็จ
+    try {
+      await sendToLine({ type: "ชำระเงินสำเร็จ", serial: state.serial, phone: state.phone, package: state.pkg.name });
+    } catch (e) { /* ข้าม */ }
     history_ = ["home"];
     render(screens.result(true, "ระบบได้รับข้อมูลการชำระเงินเรียบร้อยแล้ว"));
   } catch (e) {
-    render(screens.result(false, "เกิดข้อผิดพลาด กรุณาติดต่อร้านค้า"));
+    render(screens.result(false, "เกิดข้อผิดพลาด กรุณาติดต่อร้านค้า", true));
   }
 }
 
