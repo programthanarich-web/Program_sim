@@ -873,8 +873,7 @@ function validSim(serial, phone) {
 
 // ปิดการส่งข้อความเข้า LINE ชั่วคราว (ตั้งเป็น false เมื่อพร้อมเปิดใช้งาน)
 // ดาวน์โหลดรูป QR พร้อมเพย์ไปชำระเงินในแอปธนาคาร (ถ้าดาวน์โหลดตรงไม่ได้ จะเปิดรูปในแท็บใหม่แทน)
-async function downloadQR() {
-  const url = CONFIG.QR_IMAGE_URL;
+async function downloadQR(url = CONFIG.QR_IMAGE_URL) {
   if (!url) return;
   try {
     const res = await fetch(url);
@@ -889,8 +888,70 @@ async function downloadQR() {
     a.remove();
     setTimeout(() => URL.revokeObjectURL(objUrl), 1000);
   } catch (e) {
-    window.open(url, "_blank");
+    showQRModal(url);
   }
+}
+
+// สร้าง QR ตามยอดจากหลังบ้าน แล้วตรวจสถานะการจ่ายเป็นระยะ
+let payTimer = null;
+
+async function initPayment() {
+  const box = document.getElementById("qrBox");
+  if (!box || !state.pkg) return;
+  clearInterval(payTimer);
+  state.payment = null;
+  try {
+    const r = await fetch(API_BASE + "/payment/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ packageId: state.pkg.id, serial: state.serial, phone: state.phone })
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || "ไม่สามารถสร้าง QR ได้");
+    state.payment = { orderNo: d.orderNo, qrUrl: d.qrUrl, expiresAt: d.expiresAt };
+    box.innerHTML = `<img src="${d.qrUrl}" alt="QR ชำระเงิน" style="width:100%;height:auto;display:block">`;
+    document.getElementById("qrMsg").textContent = "กรุณาชำระภายใน 10 นาที ระบบจะตรวจสอบให้อัตโนมัติ";
+    document.getElementById("qrDl").style.display = "block";
+    startPaymentPolling();
+  } catch (e) {
+    const err = document.getElementById("payErr");
+    if (err) { err.textContent = e.message; err.style.display = "block"; }
+  }
+}
+
+function startPaymentPolling() {
+  payTimer = setInterval(async () => {
+    if (!document.getElementById("qrBox") || !state.payment) { clearInterval(payTimer); return; }
+    try {
+      const r = await fetch(API_BASE + "/payment/status?orderNo=" + encodeURIComponent(state.payment.orderNo));
+      const d = await r.json();
+      if (d.status === "paid") {
+        clearInterval(payTimer);
+        history_ = ["home"];
+        render(screens.result(true, "ชำระค่าแพ็กเกจเรียบร้อยแล้ว ระบบได้รับข้อมูลของคุณแล้ว"));
+      } else if (d.status === "expired") {
+        clearInterval(payTimer);
+        render(screens.result(false, "QR หมดอายุแล้ว กรุณาเลือกแพ็กเกจใหม่อีกครั้ง"));
+      }
+    } catch (e) { /* รอรอบถัดไป */ }
+  }, 3000);
+}
+
+// เมื่อดาวน์โหลดตรงไม่ได้ (เช่น เปิดในแอป Messenger) ให้แสดงรูป QR ให้กดค้างแล้วบันทึกเอง
+function showQRModal(url) {
+  document.getElementById("qrModal")?.remove();
+  const el = document.createElement("div");
+  el.id = "qrModal";
+  el.className = "so-overlay";
+  el.onclick = e => { if (e.target === el) el.remove(); };
+  el.innerHTML = `
+    <div class="so-box">
+      <h3>บันทึกรูป QR</h3>
+      <p>กดค้างที่รูปด้านล่าง แล้วเลือก "บันทึกรูปภาพ" หรือ "Save image"<br>ถ้าเปิดจาก Messenger ให้กดเมนู ⋯ แล้วเลือก "เปิดในเบราว์เซอร์" ก่อน</p>
+      <img src="${url}" alt="QR พร้อมเพย์" style="width:100%;height:auto;display:block;border-radius:10px">
+      <button class="btn ghost" style="margin-top:12px" onclick="document.getElementById('qrModal').remove()">ปิด</button>
+    </div>`;
+  document.body.appendChild(el);
 }
 
 const SKIP_LINE_SEND = true;
