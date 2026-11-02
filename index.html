@@ -572,6 +572,7 @@ function verifySlip(file) {
   if (!CONFIG.SLIP_VERIFY_ENDPOINT) return Promise.resolve({ ok: true });
   const fd = new FormData();
   fd.append("slip", file);
+  fd.append("packageId", state.pkg ? state.pkg.id : "");
   return fetch(CONFIG.SLIP_VERIFY_ENDPOINT, { method: "POST", body: fd }).then(r => r.json());
 }
 
