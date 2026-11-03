@@ -215,6 +215,7 @@
   .sample figcaption{font-size:12px;color:var(--muted);padding:8px 10px;text-align:center}
   .hidden{display:none !important}
 </style>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
 <body>
 
@@ -802,7 +803,7 @@ const screens = {
 
   result(ok, msg, showContact = false) {
     hero.classList.add("hidden");
-    const line = !ok && showContact && CONFIG.lineContactUrl
+    const line = CONFIG.lineContactUrl
       ? `<a class="btn" href="${CONFIG.lineContactUrl}" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;background:#06c755;margin-top:10px">💬 ติดต่อร้านผ่าน LINE</a>`
       : "";
     return `
@@ -958,6 +959,18 @@ function showQRModal(url) {
   document.body.appendChild(el);
 }
 
+// LINE LIFF: เปิดเว็บจากแอป LINE ได้ ถ้ายังไม่ได้ใส่ LIFF ID ในหลังบ้าน ระบบจะทำงานเป็นเว็บปกติ
+async function initLiff() {
+  if (!CONFIG.liffId || typeof liff === "undefined") return;
+  try {
+    await liff.init({ liffId: CONFIG.liffId });
+    if (liff.isLoggedIn()) {
+      const p = await liff.getProfile();
+      state.lineUser = { userId: p.userId, displayName: p.displayName };
+    }
+  } catch (e) { /* ไม่มี LIFF ก็ใช้เว็บได้ตามปกติ */ }
+}
+
 const SKIP_LINE_SEND = true;
 
 async function submitSim() {
@@ -1057,7 +1070,11 @@ async function submitPayment() {
     });
     // แจ้งไลน์ร้านเป็นเรื่องรอง ถ้าพลาดไม่ควรทำให้ลูกค้าเห็นว่าชำระไม่สำเร็จ
     try {
-      await sendToLine({ type: "ชำระเงินสำเร็จ", serial: state.serial, phone: state.phone, package: state.pkg.name });
+      await sendToLine({
+        type: "ชำระเงินสำเร็จ", serial: state.serial, phone: state.phone, package: state.pkg.name,
+        lineName: state.lineUser ? state.lineUser.displayName : "-",
+        lineUserId: state.lineUser ? state.lineUser.userId : ""
+      });
     } catch (e) { /* ข้าม */ }
     history_ = ["home"];
     render(screens.result(true, "ระบบได้รับข้อมูลการชำระเงินเรียบร้อยแล้ว"));
@@ -1066,7 +1083,7 @@ async function submitPayment() {
   }
 }
 
-loadRemoteSettings().then(() => render());
+loadRemoteSettings().then(() => { render(); initLiff(); });
 </script>
 </body>
 </html>
