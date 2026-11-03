@@ -17,7 +17,12 @@
   button{font-family:inherit}
 
   /* ---------- Top bar ---------- */
-  .topbar{background:#fff;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;position:sticky;top:0;z-index:20;border-bottom:1px solid var(--line)}
+  .topbar{background:#fff;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:10px 16px;position:sticky;top:0;z-index:20;border-bottom:1px solid var(--line)}
+  .top-left{justify-self:start}
+  .top-right{justify-self:end}
+  .top-center{display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;min-height:44px}
+  .top-center .logo.has-img{width:auto;height:44px;max-width:200px;background:none}
+  .top-center .logo.has-img img{height:44px;width:auto;max-width:200px;object-fit:contain;display:block}
   .brand{display:flex;align-items:center;gap:10px}
   .logo{width:34px;height:34px;border-radius:9px;background:var(--blue);display:flex;align-items:center;justify-content:center;position:relative}
   .logo::before{content:"";width:12px;height:16px;background:var(--yellow);border-radius:3px}
@@ -239,6 +244,16 @@
   .reg-sample img{width:100%;height:auto;display:block}
   .reg-sample-empty{aspect-ratio:16/10;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:13px;padding:12px;text-align:center}
   .reg-link{display:block;text-align:center;text-decoration:none;box-sizing:border-box}
+  .banner-slides{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:10px;margin:0 0 14px;scrollbar-width:none}
+  .banner-slides::-webkit-scrollbar{display:none}
+  .banner-slide{flex:0 0 100%;scroll-snap-align:center;border-radius:14px;overflow:hidden}
+  .banner-slide img{width:100%;height:auto;display:block}
+  .quick-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 6px;padding:10px 4px 4px}
+  .qi{background:none;border:0;font-family:inherit;color:#1f2937;cursor:pointer;text-align:center;padding:0;display:flex;flex-direction:column;align-items:center;gap:6px}
+  .qi b{font-size:12.5px;font-weight:600;line-height:1.3;color:#1f2937}
+  .qi-icon{width:56px;height:56px;display:flex;align-items:center;justify-content:center;font-size:34px;line-height:1}
+  .qi-icon img{width:100%;height:100%;object-fit:contain;display:block}
+  .qi.disabled{opacity:.5;cursor:not-allowed}
   .reg-plain{margin-top:8px}
   .reg-plain .reg-sample{background:#fff;border:1px solid #e3e9f3;border-radius:12px;margin:0}
   .reg-plain .reg-sample-empty{color:#6b7a90}
@@ -258,20 +273,14 @@
 
 <!-- ============ Top bar ============ -->
 <header class="topbar">
-  <div style="display:flex;align-items:center;gap:10px">
+  <div class="top-left">
     <button class="back-btn" id="backBtn" onclick="goBack()">‹ กลับ</button>
-    <div class="brand" id="brand" onclick="resetTo('home')" style="cursor:pointer">
-      <div class="logo" id="logoBox"></div>
-      <div>
-        <div class="brand-name">ProgramThanarich</div>
-        <div class="brand-sub">เปิดซิม ขายเบอร์สวย ราคาโคตรโปร</div>
-      </div>
-    </div>
   </div>
-  <div class="icon-btns">
-    <button class="icon-btn" title="ค้นหา">🔍</button>
-    <button class="icon-btn" title="เมนู">☰</button>
+  <div class="top-center" id="brand" onclick="resetTo('home')">
+    <div class="logo" id="logoBox"></div>
+    <span class="brand-name" id="brandName">ProgramThanarich</span>
   </div>
+  <div class="top-right icon-btns" id="topRight"></div>
 </header>
 
 <!-- ============ Hero (แสดงเฉพาะหน้าแรก) ============ -->
@@ -371,13 +380,24 @@ const HERO_DEFAULT = hero.innerHTML;
 // โลโก้ร้านที่มุมบนซ้าย (ถ้าหลังบ้านตั้งรูปไว้ จะแสดงรูปแทนไอคอนเดิม)
 function applyLogo() {
   const box = document.getElementById("logoBox");
-  if (!box) return;
-  if (CONFIG.logoImage) {
-    box.classList.add("has-img");
-    box.innerHTML = `<img src="${CONFIG.logoImage}" alt="ProgramThanarich">`;
-  } else {
-    box.classList.remove("has-img");
-    box.innerHTML = "";
+  const name = document.getElementById("brandName");
+  if (box) {
+    if (CONFIG.logoImage) {
+      box.classList.add("has-img");
+      box.innerHTML = `<img src="${CONFIG.logoImage}" alt="ProgramThanarich">`;
+      if (name) name.style.display = "none";
+    } else {
+      box.classList.remove("has-img");
+      box.innerHTML = "";
+      if (name) name.style.display = "";
+    }
+  }
+  // ปุ่มขวาบน: ติดต่อร้านผ่าน LINE (แสดงเมื่อหลังบ้านตั้งลิงก์ไว้)
+  const right = document.getElementById("topRight");
+  if (right) {
+    right.innerHTML = CONFIG.lineContactUrl
+      ? `<a class="icon-btn" href="${CONFIG.lineContactUrl}" target="_blank" rel="noopener" title="ติดต่อร้านผ่าน LINE">💬</a>`
+      : "";
   }
 }
 
@@ -647,6 +667,16 @@ function carrierLabel(key) {
   return c ? c.label : "ลงทะเบียนซิม";
 }
 
+// แบนเนอร์หน้าแรก: ตั้งค่าได้จากหลังบ้าน (สูงสุด 5 รูป) ว่างไว้ = ไม่แสดง
+function bannerHtml() {
+  const list = (CONFIG.banners || []).filter(b => b && b.url).slice(0, 5);
+  if (!list.length) return "";
+  return `<div class="banner-slides">${list.map(b => {
+    const img = `<img src="${b.url}" alt="แบนเนอร์">`;
+    return `<div class="banner-slide">${b.link ? `<a href="${b.link}" target="_blank" rel="noopener">${img}</a>` : img}</div>`;
+  }).join("")}</div>`;
+}
+
 // ไอคอนเมนูสมัครเน็ต: ใช้รูปจากหลังบ้านถ้ามี ไม่มีก็ใช้อีโมจิเดิม
 function menuIconHtml(key, fallback) {
   const url = (CONFIG.menuIcons || {})[key];
@@ -740,21 +770,22 @@ const screens = {
     hero.classList.remove("hidden");
     return `
       <div class="card">
+        ${bannerHtml()}
         <div class="card-head"><div class="ic"></div><h2>สมัครแพ็กเกจเน็ต</h2></div>
         <div class="sub">เลือกวิธีที่สะดวกกับคุณ</div>
 
-        <div class="features">
-          <button class="feat" onclick="startRegister()">
-            <div class="fi">🗂️</div><b>ลงทะเบียนซิม</b><span>กรอก Serial และเบอร์ที่ได้รับ</span>
+        <div class="quick-grid">
+          <button class="qi" onclick="startRegister()">
+            <div class="qi-icon">${menuIconHtml("register", "🗂️")}</div><b>ลงทะเบียนซิม</b>
           </button>
-          <button class="feat" onclick="go('net-menu')">
-            <div class="fi">📶</div><b>สมัครแพ็กเกจเน็ต</b><span>เติมเงินเอง หรือสมัครกับทางร้าน</span>
+          <button class="qi" onclick="go('net-menu')">
+            <div class="qi-icon">${menuIconHtml("net", "📶")}</div><b>สมัครแพ็กเกจเน็ต</b>
           </button>
-          <button class="feat disabled">
-            <div class="fi">🔄</div><b>สมัครโปรเบอร์เดิม</b><span>เร็ว ๆ นี้</span>
+          <button class="qi disabled">
+            <div class="qi-icon">${menuIconHtml("port", "🔄")}</div><b>สมัครโปรเบอร์เดิม</b>
           </button>
-          <button class="feat disabled">
-            <div class="fi">📱</div><b>รับ E-Sim</b><span>เร็ว ๆ นี้</span>
+          <button class="qi disabled">
+            <div class="qi-icon">${menuIconHtml("esim", "📱")}</div><b>รับ E-Sim</b>
           </button>
         </div>
       </div>
