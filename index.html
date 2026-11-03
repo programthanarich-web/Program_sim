@@ -87,7 +87,8 @@
   .menu-list{display:flex;flex-direction:column;gap:10px}
   .menu-item{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid var(--line);border-radius:14px;cursor:pointer;background:#fff;transition:.15s;text-align:left;width:100%}
   .menu-item:hover{border-color:var(--blue-l);background:#f7fbff}
-  .menu-item .mi{width:44px;height:44px;border-radius:12px;background:#eaf2ff;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+  .menu-item .mi{width:44px;height:44px;border-radius:12px;background:#eaf2ff;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;overflow:hidden}
+  .menu-item .mi img{width:100%;height:100%;object-fit:contain;display:block}
   .menu-item .mt{flex:1}
   .menu-item .mt b{display:block;font-size:15px}
   .menu-item .mt span{font-size:12px;color:var(--muted)}
@@ -646,6 +647,12 @@ function carrierLabel(key) {
   return c ? c.label : "ลงทะเบียนซิม";
 }
 
+// ไอคอนเมนูสมัครเน็ต: ใช้รูปจากหลังบ้านถ้ามี ไม่มีก็ใช้อีโมจิเดิม
+function menuIconHtml(key, fallback) {
+  const url = (CONFIG.menuIcons || {})[key];
+  return url ? `<img src="${url}" alt="">` : fallback;
+}
+
 function carrierLogoBox(key) {
   const url = (CONFIG.carrierLogos || {})[key];
   return url
@@ -809,12 +816,12 @@ const screens = {
         <div class="sub">เลือกวิธีที่สะดวกกับคุณ</div>
         <div class="menu-list">
           <button class="menu-item" onclick="startFlow('self')">
-            <div class="mi">💳</div>
+            <div class="mi">${menuIconHtml("self", "💳")}</div>
             <div class="mt"><b>${menuText("selfTitle")}</b><span>${menuText("selfDesc")}</span></div>
             <div class="chev">›</div>
           </button>
           <button class="menu-item" onclick="startFlow('shop')">
-            <div class="mi">🏪</div>
+            <div class="mi">${menuIconHtml("shop", "🏪")}</div>
             <div class="mt">
               <b>${menuText("shopTitle")} <span class="tag green">ลด ${globalDiscountLabel()}</span></b>
               <span>${menuText("shopDesc")}</span>
