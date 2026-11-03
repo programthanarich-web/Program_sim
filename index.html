@@ -434,10 +434,10 @@ function renderSideMenu() {
     ? `<button class="sm-item disabled" disabled><span class="sm-ic">${icon}</span><span>${label}</span></button>`
     : `<button class="sm-item" onclick="${action}"><span class="sm-ic">${icon}</span><span>${label}</span></button>`;
   const items = [
-    item("closeMenu();startRegister()", menuIconHtml("register", "🗂️"), "ลงทะเบียนซิม"),
-    item("closeMenu();go('net-menu')", menuIconHtml("net", "📶"), "สมัครแพ็กเกจเน็ต"),
-    item("", menuIconHtml("port", "🔄"), "สมัครโปรเบอร์เดิม (เร็ว ๆ นี้)", true),
-    item("", menuIconHtml("esim", "📱"), "รับ E-Sim (เร็ว ๆ นี้)", true)
+    item("closeMenu();startRegister()", menuIconHtml("register", "🗂️"), quickLabel("register", "ลงทะเบียนซิม")),
+    item("closeMenu();go('net-menu')", menuIconHtml("net", "📶"), quickLabel("net", "สมัครแพ็กเกจเน็ต")),
+    item("", menuIconHtml("port", "🔄"), quickLabel("port", "สมัครโปรเบอร์เดิม") + " (เร็ว ๆ นี้)", true),
+    item("", menuIconHtml("esim", "📱"), quickLabel("esim", "รับ E-Sim") + " (เร็ว ๆ นี้)", true)
   ];
   if (CONFIG.lineContactUrl) {
     items.push(`<a class="sm-item" href="${CONFIG.lineContactUrl}" target="_blank" rel="noopener"><span class="sm-ic">💬</span><span>ติดต่อร้านผ่าน LINE</span></a>`);
@@ -726,6 +726,12 @@ function bannerHtml() {
   }).join("")}</div>`;
 }
 
+// ชื่อเมนูลัดหน้าแรก: ใช้ชื่อจากหลังบ้านถ้ามี ไม่มีก็ใช้ชื่อเดิม
+function quickLabel(key, fallback) {
+  const q = (CONFIG.quickMenu || {})[key];
+  return (q && q.label) || fallback;
+}
+
 // ไอคอนเมนูสมัครเน็ต: ใช้รูปจากหลังบ้านถ้ามี ไม่มีก็ใช้อีโมจิเดิม
 function menuIconHtml(key, fallback) {
   const url = (CONFIG.menuIcons || {})[key];
@@ -823,16 +829,16 @@ const screens = {
 
         <div class="quick-grid">
           <button class="qi" onclick="startRegister()">
-            <div class="qi-icon">${menuIconHtml("register", "🗂️")}</div><b>ลงทะเบียนซิม</b>
+            <div class="qi-icon">${menuIconHtml("register", "🗂️")}</div><b>${quickLabel("register", "ลงทะเบียนซิม")}</b>
           </button>
           <button class="qi" onclick="go('net-menu')">
-            <div class="qi-icon">${menuIconHtml("net", "📶")}</div><b>สมัครแพ็กเกจเน็ต</b>
+            <div class="qi-icon">${menuIconHtml("net", "📶")}</div><b>${quickLabel("net", "สมัครแพ็กเกจเน็ต")}</b>
           </button>
           <button class="qi disabled">
-            <div class="qi-icon">${menuIconHtml("port", "🔄")}</div><b>สมัครโปรเบอร์เดิม</b>
+            <div class="qi-icon">${menuIconHtml("port", "🔄")}</div><b>${quickLabel("port", "สมัครโปรเบอร์เดิม")}</b>
           </button>
           <button class="qi disabled">
-            <div class="qi-icon">${menuIconHtml("esim", "📱")}</div><b>รับ E-Sim</b>
+            <div class="qi-icon">${menuIconHtml("esim", "📱")}</div><b>${quickLabel("esim", "รับ E-Sim")}</b>
           </button>
         </div>
       </div>
