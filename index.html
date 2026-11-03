@@ -644,9 +644,11 @@ function shopDiscountInfo(p) {
 
 // ถ้าหลังบ้านตั้ง "รูปหัวเว็บ" ไว้ จะแสดงรูปนั้นแทนหัวข้อแบบข้อความ
 // หัวเว็บใช้ข้อความเดิมเสมอ (รูปหัวเว็บเดิมถูกยกเลิกแล้ว ใช้แบนเนอร์หน้าแรกแทน)
+// ยกเลิกหัวข้อสีน้ำเงินเดิม ใช้แบนเนอร์หน้าแรกแทน
 function applyHero() {
   hero.classList.remove("hero-photo");
-  hero.innerHTML = HERO_DEFAULT;
+  hero.classList.add("hidden");
+  hero.innerHTML = "";
 }
 
 // จำสถานะการสมัครไว้ในแท็บเดียวกัน เผื่อหน้าเว็บถูกโหลดใหม่ตอนกลับจากแอปธนาคาร
@@ -818,7 +820,7 @@ function verifySlip(file) {
    ========================================================== */
 const screens = {
   home() {
-    hero.classList.remove("hidden");
+    hero.classList.add("hidden");
     return `
       <div class="card">
         ${bannerHtml()}
@@ -1135,7 +1137,6 @@ function render(html) {
   const current = history_[history_.length - 1];
   backBtn.classList.toggle("show", history_.length > 1);
   if (typeof html === "string") { app.innerHTML = html; return; }
-  if (current === "home") hero.classList.remove("hidden");
   app.innerHTML = (screens[current] || screens.home)();
 }
 
