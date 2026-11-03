@@ -771,8 +771,6 @@ const screens = {
     return `
       <div class="card">
         ${bannerHtml()}
-        <div class="card-head"><div class="ic"></div><h2>สมัครแพ็กเกจเน็ต</h2></div>
-        <div class="sub">เลือกวิธีที่สะดวกกับคุณ</div>
 
         <div class="quick-grid">
           <button class="qi" onclick="startRegister()">
@@ -793,8 +791,6 @@ const screens = {
       ${luckyCard()}
 
       <div class="card">
-        <div class="card-head"><div class="ic"></div><h2>สะดวก ปลอดภัย มั่นใจได้</h2></div>
-        <div class="sub">ทำรายการผ่านระบบออนไลน์ มาตรฐานเดียวกับ True, AIS, Dtac</div>
         <div class="features">
           <div class="feat"><div class="fi">📞</div><b>สมัครง่าย</b><span>แค่มือถือเครื่องเดียว</span></div>
           <div class="feat"><div class="fi">🛡️</div><b>ปลอดภัย</b><span>ข้อมูลส่วนตัวเป็นความลับ</span></div>
@@ -818,13 +814,10 @@ const screens = {
       </div>
       ${x.analysis ? `
       <div class="card">
-        <div class="card-head"><div class="ic"></div><h2>วิเคราะห์เบอร์</h2></div>
         <div class="lk-text">${x.analysis.split("\n").map(l => `<p>${l}</p>`).join("")}</div>
       </div>` : ""}
       ${a ? `
       <div class="card">
-        <div class="card-head"><div class="ic"></div><h2>วิเคราะห์เบอร์</h2></div>
-        <div class="sub">วิเคราะห์อัตโนมัติตามหลักเลขศาสตร์ไทย เป็นความเชื่อ ไม่ใช่ข้อเท็จจริงทางวิทยาศาสตร์</div>
         <div class="lk-row"><span>ผลรวมตัวเลข</span><b>${a.sum} → ${a.root}</b></div>
         <div class="lk-row"><span>เลขเด่นที่สุด</span><b>${a.top.d} (${a.top.name}) ${a.top.count} ตัว</b></div>
         <div class="lk-row"><span>ความหมายเลขเด่น</span><b>${a.top.mean}</b></div>
@@ -843,8 +836,6 @@ const screens = {
     hero.classList.add("hidden");
     return `
       <div class="card">
-        <div class="card-head"><div class="ic"></div><h2>${menuText("menuTitle")}</h2></div>
-        <div class="sub">เลือกวิธีที่สะดวกกับคุณ</div>
         <div class="menu-list">
           <button class="menu-item" onclick="startFlow('self')">
             <div class="mi">${menuIconHtml("self", "💳")}</div>
@@ -869,8 +860,6 @@ const screens = {
     const isShop = state.mode === "shop";
     return `
       <div class="card">
-        <div class="card-head"><div class="ic"></div><h2>${isShop ? menuText("shopTitle") : menuText("selfTitle")}</h2></div>
-        <div class="sub">กรอกข้อมูลจากซิมที่ได้รับ</div>
 
         ${photoBlock("receivedPhoneEx", "ตัวอย่างเบอร์มือถือที่ได้รับหลังลงทะเบียน")}
 
@@ -1002,8 +991,6 @@ const screens = {
     const p = state.pkg;
     return `
       <div class="card">
-        <div class="card-head"><div class="ic"></div><h2>${p.name}</h2></div>
-        <div class="sub">ราคา ${firstPriceOf(p)} บาท</div>
         <div class="code-box">
           <small>รหัสสมัครเน็ต</small>
           <div class="code">${p.code}</div>
@@ -1023,7 +1010,6 @@ const screens = {
     const net = base - info.amount;
     return `
       <div class="card">
-        <div class="card-head"><div class="ic"></div><h2>ชำระค่าแพ็กเกจเน็ต</h2></div>
         <div class="info">
           <div><span>แพ็กเกจ</span><b>${p.name}</b></div>
           <div><span>${hasFirst ? "ราคาเดือนแรก" : "ราคาปกติ"}</span><span>${base} บาท</span></div>
