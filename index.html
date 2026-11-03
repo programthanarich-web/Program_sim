@@ -232,7 +232,7 @@
   .sample-slides figure{flex:0 0 100%;scroll-snap-align:start;margin:0}
   .sample-slides img{width:100%;display:block;aspect-ratio:16/10;object-fit:cover}
   .sample-empty{aspect-ratio:16/10;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;text-align:center;padding:12px}
-  .sample-square{max-width:200px;margin:4px auto 14px}
+  .sample-square{max-width:200px;margin:4px auto 14px;background:none;border:0;border-radius:0;overflow:visible}
   .sample-square .sample-slides img{aspect-ratio:1/1;object-fit:contain;background:#fff}
   .sample-square .sample-empty{aspect-ratio:1/1}
   .sample figcaption{font-size:12px;color:var(--muted);padding:8px 10px;text-align:center}
@@ -1112,7 +1112,8 @@ const screens = {
 function photoBlock(key, label) {
   const url = (CONFIG.photos || {})[key];
   // รูปในฟอร์มกรอกซิมแสดงเป็นจัตุรัส 526 × 526
-  const square = (key === "receivedPhoneEx" || key === "simNumberEx") ? " sample-square" : "";
+  const isSquare = (key === "receivedPhoneEx" || key === "simNumberEx");
+  const square = isSquare ? " sample-square" : "";
   if (!url) {
     return `<div class="sample${square}"><div class="sample-empty">${label}<br>(ยังไม่ได้ตั้งค่า)</div></div>`;
   }
@@ -1121,7 +1122,7 @@ function photoBlock(key, label) {
       <div class="sample-slides">
         <figure>
           <img src="${url}" alt="${label}">
-          <figcaption>${label}</figcaption>
+          ${isSquare ? "" : `<figcaption>${label}</figcaption>`}
         </figure>
       </div>
     </div>`;
