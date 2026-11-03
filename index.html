@@ -233,6 +233,16 @@
   .sample-slides img{width:100%;display:block;aspect-ratio:16/10;object-fit:cover}
   .sample-empty{aspect-ratio:16/10;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;text-align:center;padding:12px}
   .sample-square{max-width:200px;margin:4px auto 14px;background:none;border:0;border-radius:0;overflow:visible}
+  .sr-only{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden}
+  .slip-drop{display:flex;align-items:center;gap:12px;margin:6px 0 4px;padding:14px;border:2px dashed #93c5fd;border-radius:16px;background:linear-gradient(135deg,#eff6ff,#f8fbff);cursor:pointer;transition:transform .15s,border-color .2s,background .2s;position:relative}
+  .slip-drop:active{transform:scale(.98)}
+  .slip-drop.has-file{border:2px solid #22c55e;background:#f0fdf4}
+  .slip-icon{flex:0 0 48px;width:48px;height:48px;border-radius:14px;background:#fff;box-shadow:0 4px 12px rgba(37,99,235,.15);display:flex;align-items:center;justify-content:center;font-size:24px}
+  .slip-text{flex:1;min-width:0;display:flex;flex-direction:column}
+  .slip-text b{font-size:15px;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .slip-text small{font-size:12px;color:#64748b;margin-top:2px}
+  .slip-pick{flex:0 0 auto;padding:8px 14px;border-radius:999px;background:#2563eb;color:#fff;font-size:13px;font-weight:700;white-space:nowrap;box-shadow:0 4px 10px rgba(37,99,235,.25)}
+  .slip-drop.has-file .slip-pick{background:#16a34a;box-shadow:0 4px 10px rgba(22,163,74,.25)}
   .sample-square .sample-slides img{aspect-ratio:1/1;object-fit:contain;background:#fff}
   .sample-square .sample-empty{aspect-ratio:1/1}
   .sample figcaption{font-size:12px;color:var(--muted);padding:8px 10px;text-align:center}
@@ -1085,8 +1095,15 @@ const screens = {
           : `<div class="qr-empty">QR พร้อมเพย์</div>`}</div>
         ${CONFIG.QR_IMAGE_URL ? `<button type="button" class="qr-dl" onclick="downloadQR()">⬇ ดาวน์โหลด QR Code</button>` : ""}
         <label class="field-label" for="slip">แนบสลิปการโอนเงิน</label>
-        <input type="file" id="slip" accept="image/*" class="file-input"
-               onchange="document.getElementById('payErr').style.display='none'">
+        <label class="slip-drop" id="slipDrop" for="slip">
+          <span class="slip-icon">🧾</span>
+          <span class="slip-text">
+            <b id="slipName">ยังไม่ได้เลือกรูปสลิป</b>
+            <small>รองรับไฟล์รูปภาพ JPG / PNG</small>
+          </span>
+          <span class="slip-pick">เลือกรูป</span>
+        </label>
+        <input type="file" id="slip" accept="image/*" class="sr-only" onchange="onSlipPick(this)">
         <div class="err" id="payErr"></div>
         <button class="btn" id="paySubmit" onclick="submitPayment()" style="margin-top:14px">ยืนยันการชำระเงิน →</button>
       </div>`;
@@ -1340,6 +1357,16 @@ function payShopOnly(id) {
     state.skipToPayment = true;
     go("sim-form");
   }
+}
+
+function onSlipPick(input) {
+  const f = input.files && input.files[0];
+  const name = document.getElementById("slipName");
+  const drop = document.getElementById("slipDrop");
+  const err = document.getElementById("payErr");
+  if (name) name.textContent = f ? f.name : "ยังไม่ได้เลือกรูปสลิป";
+  if (drop) drop.classList.toggle("has-file", !!f);
+  if (err) err.style.display = "none";
 }
 
 async function submitPayment() {
