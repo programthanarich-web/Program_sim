@@ -1138,6 +1138,7 @@ const screens = {
           ? `<img src="${CONFIG.QR_IMAGE_URL}" alt="QR พร้อมเพย์">`
           : `<div class="qr-empty">QR พร้อมเพย์</div>`}</div>
         ${CONFIG.QR_IMAGE_URL ? `<button type="button" class="qr-dl" onclick="downloadQR()">⬇ ดาวน์โหลด QR Code</button>` : ""}
+        ${CONFIG.SLIP_CHECK === false ? "" : `
         <label class="field-label" for="slip">แนบสลิปการโอนเงิน</label>
         <label class="slip-drop" id="slipDrop" for="slip">
           <span class="slip-icon">🧾</span>
@@ -1147,7 +1148,7 @@ const screens = {
           </span>
           <span class="slip-pick">เลือกรูป</span>
         </label>
-        <input type="file" id="slip" accept="image/*" class="sr-only" onchange="onSlipPick(this)">
+        <input type="file" id="slip" accept="image/*" class="sr-only" onchange="onSlipPick(this)">`}
         <div class="err" id="payErr"></div>
         <button class="btn" id="paySubmit" onclick="submitPayment()" style="margin-top:14px">ยืนยันการชำระเงิน →</button>
       </div>`;
@@ -1513,15 +1514,18 @@ function onSlipPick(input) {
 }
 
 async function submitPayment() {
-  const file = document.getElementById("slip").files[0];
+  // โหมดทดสอบ (ปิดการตรวจสลิปจากหลังบ้าน) ไม่ต้องแนบสลิป
+  const slipOn = CONFIG.SLIP_CHECK !== false;
+  const slipInput = document.getElementById("slip");
+  const file = slipOn && slipInput ? slipInput.files[0] : null;
   const err = document.getElementById("payErr");
-  if (!file) { err.textContent = "กรุณาแนบสลิปการโอนเงิน"; err.style.display = "block"; return; }
+  if (slipOn && !file) { err.textContent = "กรุณาแนบสลิปการโอนเงิน"; err.style.display = "block"; return; }
 
   const btn = document.getElementById("paySubmit");
   btn.disabled = true;
   btn.textContent = "กำลังตรวจสอบสลิป...";
   try {
-    const check = await verifySlip(file);
+    const check = slipOn ? await verifySlip(file) : { ok: true };
     if (!check.ok) {
       render(screens.result(false, check.reason || "สลิปไม่ถูกต้องหรือไม่สามารถตรวจสอบได้"));
       return;
