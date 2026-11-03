@@ -921,6 +921,13 @@ const screens = {
           <input type="tel" id="phone" inputmode="numeric" maxlength="10" placeholder="081-234-5678" value="${state.phone}">
         </div>
 
+        ${photoBlock("simNumberEx", "ตัวอย่างหมายเลขซีเรียลซิม")}
+
+        <label class="field-label" for="serial">หมายเลขซีเรียลซิมที่ได้รับ</label>
+        <div class="input"><span class="i">🔢</span>
+          <input type="text" id="serial" inputmode="numeric" placeholder="กรอกตัวเลขบนซิม" value="${state.serial}">
+        </div>
+
         <div class="how">
           <b>วิธีใช้งาน</b>
           <ol>
@@ -1150,8 +1157,9 @@ function startFlow(mode) {
   go("sim-form");
 }
 
-function validSim(phone) {
+function validSim(serial, phone) {
   if (!/^0\d{8,9}$/.test(phone)) return "เบอร์มือถือไม่ถูกต้อง";
+  if (!/^\d{10,25}$/.test(serial)) return "หมายเลขซีเรียลซิมไม่ถูกต้อง (ตัวเลข 10-25 หลัก)";
   return null;
 }
 
@@ -1253,10 +1261,10 @@ async function initLiff() {
 const SKIP_LINE_SEND = true;
 
 async function submitSim() {
-  const serial = "";
+  const serial = document.getElementById("serial").value.replace(/\s/g, "").trim();
   const phone = document.getElementById("phone").value.replace(/[-\s]/g, "").trim();
   const err = document.getElementById("formErr");
-  const msg = validSim(phone);
+  const msg = validSim(serial, phone);
   if (msg) { err.textContent = msg; err.style.display = "block"; return; }
 
   const btn = document.getElementById("simSubmit");
@@ -1320,7 +1328,7 @@ function payShopOnly(id) {
   closeShopOnly();
   state.mode = "shop";
   state.pkg = PACKAGES.find(p => p.id === id);
-  if (state.phone) {
+  if (state.serial && state.phone) {
     go("payment");
   } else {
     state.skipToPayment = true;
