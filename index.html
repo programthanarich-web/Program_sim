@@ -243,6 +243,11 @@
   .slip-text small{font-size:12px;color:#64748b;margin-top:2px}
   .slip-pick{flex:0 0 auto;padding:8px 14px;border-radius:999px;background:#2563eb;color:#fff;font-size:13px;font-weight:700;white-space:nowrap;box-shadow:0 4px 10px rgba(37,99,235,.25)}
   .slip-drop.has-file .slip-pick{background:#16a34a;box-shadow:0 4px 10px rgba(22,163,74,.25)}
+  .ship-sec{margin-top:16px;padding-top:14px;border-top:1px dashed #e2e8f0}
+  .ship-h{font-size:15px;font-weight:800;color:#0f172a;margin-bottom:2px}
+  .ship-sender{font-size:13px;color:var(--muted);margin-top:4px}
+  .ship-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+  .ship-grid .input{margin-bottom:0}
   .order-no{font-size:14px;color:var(--muted);margin:4px 0 14px}
   .order-no b{color:#0f172a;letter-spacing:.3px}
   .ostep-list{display:flex;flex-direction:column;gap:10px;text-align:left;margin:6px 0 16px;padding:14px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0}
@@ -695,6 +700,7 @@ function saveState() {
       phone: state.phone,
       pkgId: state.pkg ? state.pkg.id : null,
       pkgData: state.pkg && String(state.pkg.id).startsWith("lucky:") ? state.pkg : null,
+      shipping: state.shipping || null,
       regCarrier: state.regCarrier || null
     }));
   } catch (e) { /* เบราว์เซอร์บางตัวใช้ไม่ได้ ข้ามไป */ }
@@ -709,6 +715,7 @@ function restoreState() {
   state.mode = saved.mode || null;
   state.phone = saved.phone || "";
   state.pkg = saved.pkgData || (saved.pkgId ? (PACKAGES.find(p => p.id === saved.pkgId) || null) : null);
+  state.shipping = saved.shipping || null;
   let hist = saved.history.filter(s => screens[s]);
   if (!hist.length) hist = ["home"];
   const last = hist[hist.length - 1];
@@ -892,6 +899,11 @@ async function verifySlip(file) {
 /* ==========================================================
    หน้าจอ
    ========================================================== */
+// กันอักขระพิเศษทำหน้าเว็บพัง เมื่อใส่ค่าที่ลูกค้ากรอกลงในช่องกรอก
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
 const screens = {
   home() {
     hero.classList.add("hidden");
@@ -966,16 +978,62 @@ const screens = {
     hero.classList.add("hidden");
     const p = state.pkg;
     if (!p || !String(p.id).startsWith("lucky:")) return `<div class="card"><p>ไม่พบข้อมูลเบอร์</p></div>`;
+    const sh = state.shipping || {};
     return `
       <div class="card">
         <div class="info">
           <div><span>เบอร์มงคล</span><b>${p.number}</b></div>
           <div class="total"><span>ราคา</span><span>${Number(p.price).toLocaleString("th-TH")} บาท</span></div>
         </div>
-        <label class="field-label" for="luckyPhone" style="margin-top:14px">เบอร์มือถือสำหรับติดต่อกลับ</label>
-        <div class="input"><span class="i">📞</span>
-          <input type="tel" id="luckyPhone" inputmode="numeric" maxlength="10" placeholder="081-234-5678" value="${state.phone || ""}">
+        <div class="ship-sec">
+          <div class="ship-h">ผู้ส่ง</div>
+          <div class="ship-sender">ProgramThanarich · ร้านค้า</div>
         </div>
+
+        <div class="ship-sec">
+          <div class="ship-h">ผู้รับ</div>
+          <label class="field-label" for="shipName">ชื่อ-นามสกุลผู้รับ</label>
+          <div class="input"><span class="i">👤</span>
+            <input id="shipName" placeholder="ชื่อ นามสกุล" value="${esc(sh.name || "")}">
+          </div>
+          <label class="field-label" for="luckyPhone">เบอร์โทรผู้รับ</label>
+          <div class="input"><span class="i">📞</span>
+            <input type="tel" id="luckyPhone" inputmode="numeric" maxlength="12" placeholder="081-234-5678" value="${esc(sh.phone || state.phone || "")}">
+          </div>
+        </div>
+
+        <div class="ship-sec">
+          <div class="ship-h">ที่อยู่จัดส่ง</div>
+          <label class="field-label" for="shipAddr1">บ้านเลขที่ / หมู่บ้าน / อาคาร / ห้อง</label>
+          <div class="input"><span class="i">🏠</span>
+            <input id="shipAddr1" placeholder="เช่น 99/1 หมู่ 2 คอนโด ABC ห้อง 305" value="${esc(sh.addr1 || "")}">
+          </div>
+          <label class="field-label" for="shipRoad">ถนน / ซอย (ถ้ามี)</label>
+          <div class="input"><span class="i">🛣️</span>
+            <input id="shipRoad" placeholder="เช่น ถนนสุขุมวิท ซอย 10" value="${esc(sh.road || "")}">
+          </div>
+          <div class="ship-grid">
+            <div>
+              <label class="field-label" for="shipSub">แขวง / ตำบล</label>
+              <div class="input"><input id="shipSub" value="${esc(sh.sub || "")}"></div>
+            </div>
+            <div>
+              <label class="field-label" for="shipDist">เขต / อำเภอ</label>
+              <div class="input"><input id="shipDist" value="${esc(sh.dist || "")}"></div>
+            </div>
+            <div>
+              <label class="field-label" for="shipProv">จังหวัด</label>
+              <div class="input"><input id="shipProv" value="${esc(sh.prov || "")}"></div>
+            </div>
+            <div>
+              <label class="field-label" for="shipZip">รหัสไปรษณีย์</label>
+              <div class="input"><input id="shipZip" inputmode="numeric" maxlength="5" placeholder="10110" value="${esc(sh.zip || "")}"></div>
+            </div>
+          </div>
+          <label class="field-label" for="shipNote">หมายเหตุถึงพนักงานส่ง (ถ้ามี)</label>
+          <div class="input"><input id="shipNote" placeholder="เช่น ฝากไว้กับ รปภ." value="${esc(sh.note || "")}"></div>
+        </div>
+
         <div class="err" id="luckyErr"></div>
         <button class="btn" style="margin-top:14px" onclick="luckyNext()">ไปหน้าชำระเงิน →</button>
       </div>
@@ -1286,14 +1344,30 @@ function buyLucky() {
 }
 
 function luckyNext() {
-  const phone = (document.getElementById("luckyPhone").value || "").replace(/[-\s]/g, "");
+  const v = id => (document.getElementById(id)?.value || "").trim();
+  const phone = v("luckyPhone").replace(/[-\s]/g, "");
   const err = document.getElementById("luckyErr");
-  if (!/^0\d{8,9}$/.test(phone)) {
-    err.textContent = "เบอร์มือถือไม่ถูกต้อง (ตัวอย่าง 0812345678)";
-    err.style.display = "block";
-    return;
-  }
+  const fail = msg => { err.textContent = msg; err.style.display = "block"; };
+
+  const shipping = {
+    name: v("shipName"),
+    phone,
+    addr1: v("shipAddr1"),
+    road: v("shipRoad"),
+    sub: v("shipSub"),
+    dist: v("shipDist"),
+    prov: v("shipProv"),
+    zip: v("shipZip"),
+    note: v("shipNote")
+  };
+  if (!shipping.name) return fail("กรุณากรอกชื่อ-นามสกุลผู้รับ");
+  if (!/^0\d{8,9}$/.test(phone)) return fail("เบอร์โทรผู้รับไม่ถูกต้อง (ตัวอย่าง 0812345678)");
+  if (!shipping.addr1) return fail("กรุณากรอกบ้านเลขที่ / หมู่บ้าน / อาคาร");
+  if (!shipping.sub || !shipping.dist || !shipping.prov) return fail("กรุณากรอกแขวง/ตำบล เขต/อำเภอ และจังหวัด");
+  if (!/^\d{5}$/.test(shipping.zip)) return fail("รหัสไปรษณีย์ต้องเป็นตัวเลข 5 หลัก");
+
   state.phone = phone;
+  state.shipping = shipping;
   go("payment");
 }
 
@@ -1613,7 +1687,8 @@ async function submitPayment() {
     const created = await postJSON(CONFIG.BACKEND_ENDPOINT, {
       serial: state.serial, phone: state.phone,
       package: state.pkg, amount, time: new Date().toISOString(),
-      lineUserId: state.lineUser ? state.lineUser.userId : ""
+      lineUserId: state.lineUser ? state.lineUser.userId : "",
+      shipping: state.shipping || null
     });
     // แจ้งไลน์ร้านเป็นเรื่องรอง ถ้าพลาดไม่ควรทำให้ลูกค้าเห็นว่าชำระไม่สำเร็จ
     try {
