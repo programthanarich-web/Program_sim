@@ -694,6 +694,7 @@ function saveState() {
       mode: state.mode,
       phone: state.phone,
       pkgId: state.pkg ? state.pkg.id : null,
+      pkgData: state.pkg && String(state.pkg.id).startsWith("lucky:") ? state.pkg : null,
       regCarrier: state.regCarrier || null
     }));
   } catch (e) { /* เบราว์เซอร์บางตัวใช้ไม่ได้ ข้ามไป */ }
@@ -707,7 +708,7 @@ function restoreState() {
   if (!saved || !Array.isArray(saved.history)) return;
   state.mode = saved.mode || null;
   state.phone = saved.phone || "";
-  state.pkg = saved.pkgId ? (PACKAGES.find(p => p.id === saved.pkgId) || null) : null;
+  state.pkg = saved.pkgData || (saved.pkgId ? (PACKAGES.find(p => p.id === saved.pkgId) || null) : null);
   let hist = saved.history.filter(s => screens[s]);
   if (!hist.length) hist = ["home"];
   const last = hist[hist.length - 1];
@@ -955,6 +956,29 @@ const screens = {
         </div>
         ${a.warn ? `<div class="lk-warn">⚠️ ${a.warn}</div>` : ""}
       </div>` : ""}
+      ${Number(x.price) > 0
+        ? `<button class="btn" onclick="buyLucky()">สั่งซื้อเบอร์นี้ · ${Number(x.price).toLocaleString("th-TH")} บาท</button>`
+        : `<p class="lnote" style="text-align:center;margin:0 0 10px">เบอร์นี้ให้สอบถามราคากับร้านทาง LINE</p>`}
+      <button class="btn ghost" onclick="goBack()">ย้อนกลับ</button>`;
+  },
+
+  "lucky-buy"() {
+    hero.classList.add("hidden");
+    const p = state.pkg;
+    if (!p || !String(p.id).startsWith("lucky:")) return `<div class="card"><p>ไม่พบข้อมูลเบอร์</p></div>`;
+    return `
+      <div class="card">
+        <div class="info">
+          <div><span>เบอร์มงคล</span><b>${p.number}</b></div>
+          <div class="total"><span>ราคา</span><span>${Number(p.price).toLocaleString("th-TH")} บาท</span></div>
+        </div>
+        <label class="field-label" for="luckyPhone" style="margin-top:14px">เบอร์มือถือสำหรับติดต่อกลับ</label>
+        <div class="input"><span class="i">📞</span>
+          <input type="tel" id="luckyPhone" inputmode="numeric" maxlength="10" placeholder="081-234-5678" value="${state.phone || ""}">
+        </div>
+        <div class="err" id="luckyErr"></div>
+        <button class="btn" style="margin-top:14px" onclick="luckyNext()">ไปหน้าชำระเงิน →</button>
+      </div>
       <button class="btn ghost" onclick="goBack()">ย้อนกลับ</button>`;
   },
 
@@ -1243,6 +1267,36 @@ function render(html) {
 /* ==========================================================
    ลอจิกการทำงาน
    ========================================================== */
+// สั่งซื้อเบอร์มงคล: ใช้ id ขึ้นต้นด้วย "lucky:" เพื่อให้หลังบ้านรู้ว่าเป็นเบอร์มงคล
+function buyLucky() {
+  const x = state.lucky;
+  if (!x || !(Number(x.price) > 0)) return;
+  state.mode = "lucky";
+  state.serial = "";
+  state.phone = "";
+  state.pkg = {
+    id: "lucky:" + x.number,
+    name: "เบอร์มงคล " + x.number,
+    number: x.number,
+    price: Number(x.price),
+    firstPrice: "",
+    discType: "none"
+  };
+  go("lucky-buy");
+}
+
+function luckyNext() {
+  const phone = (document.getElementById("luckyPhone").value || "").replace(/[-\s]/g, "");
+  const err = document.getElementById("luckyErr");
+  if (!/^0\d{8,9}$/.test(phone)) {
+    err.textContent = "เบอร์มือถือไม่ถูกต้อง (ตัวอย่าง 0812345678)";
+    err.style.display = "block";
+    return;
+  }
+  state.phone = phone;
+  go("payment");
+}
+
 function startFlow(mode) {
   state.mode = mode;
   state.serial = "";
