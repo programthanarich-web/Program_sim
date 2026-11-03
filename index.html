@@ -296,13 +296,15 @@
   .reg-plain .reg-sample{background:#fff;border:1px solid #e3e9f3;border-radius:12px;margin:0}
   .reg-plain .reg-sample-empty{color:#6b7a90}
   .reg-plain .reg-btn{margin-top:14px}
-  .reg-terms{margin:14px 0 0;padding:14px;border-radius:12px;background:#fff7ed;border:1px solid #fed7aa;font-size:13px;line-height:1.6;color:#7c2d12}
-  .reg-terms-title{margin:0 0 6px;font-weight:700;font-size:14px;color:#9a3412}
-  .reg-terms ol{margin:0 0 10px;padding-left:20px}
-  .reg-terms li{margin-bottom:6px}
-  .reg-accept{display:flex;align-items:flex-start;gap:8px;font-weight:700;color:#0f172a;cursor:pointer}
-  .reg-accept input{width:18px;height:18px;margin-top:2px;flex:0 0 18px}
-  .reg-terms-note{margin:8px 0 0;font-size:12px;color:#9a3412}
+  .reg-terms{margin:18px 4px 0;color:#334155;font-size:13px;line-height:1.7}
+  .reg-terms-title{margin:0 0 10px;font-weight:800;font-size:15px;color:#0f172a;text-align:center}
+  .reg-terms ol{list-style:none;margin:0;padding:0;counter-reset:terms}
+  .reg-terms li{counter-increment:terms;position:relative;padding:0 0 12px 36px;margin:0 0 12px;border-bottom:1px dashed #e2e8f0}
+  .reg-terms li:last-child{border-bottom:0;margin-bottom:0;padding-bottom:0}
+  .reg-terms li::before{content:counter(terms);position:absolute;left:0;top:0;width:24px;height:24px;border-radius:50%;background:#e0ecff;color:#1d4ed8;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+  .reg-accept{display:flex;align-items:center;gap:10px;margin-top:16px;padding:12px 14px;border-radius:12px;background:#f1f5f9;font-weight:700;color:#0f172a;cursor:pointer}
+  .reg-accept input{width:20px;height:20px;flex:0 0 20px;margin:0}
+  .reg-terms-note{margin:10px 2px 0;font-size:12px;color:#64748b;text-align:center}
   .reg-link.is-disabled{opacity:.4;pointer-events:none;filter:grayscale(.4)}
   .features .fi .sim-logo{width:36px;height:36px}
   .carrier-title{display:block;font-size:20px;font-weight:700;color:#111;margin:4px 0 16px}
