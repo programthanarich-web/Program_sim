@@ -1363,6 +1363,21 @@ async function submitPayment() {
   }
 }
 
+// แบนเนอร์เลื่อนอัตโนมัติทุก 2 วินาที (หยุดชั่วคราวเมื่อลูกค้าแตะหรือปัดแบนเนอร์เอง)
+let bannerPausedUntil = 0;
+document.addEventListener("touchstart", e => {
+  if (e.target.closest && e.target.closest(".banner-slides")) bannerPausedUntil = Date.now() + 4000;
+}, { passive: true });
+setInterval(() => {
+  const el = document.querySelector(".banner-slides");
+  if (!el || Date.now() < bannerPausedUntil) return;
+  const n = el.children.length;
+  if (n < 2) return;
+  const w = el.clientWidth;
+  const next = (Math.round(el.scrollLeft / w) + 1) % n;
+  el.scrollTo({ left: next * w, behavior: "smooth" });
+}, 2000);
+
 loadRemoteSettings().then(() => { restoreState(); render(); initLiff(); });
 </script>
 </body>
