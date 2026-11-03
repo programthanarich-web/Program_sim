@@ -820,10 +820,33 @@ async function regSubmit() {
   }
 }
 
-function verifySlip(file) {
-  if (!CONFIG.SLIP_VERIFY_ENDPOINT) return Promise.resolve({ ok: true });
+// แปลงรูปสลิปเป็น JPEG ขนาดไม่เกิน 1600 px ก่อนส่ง (รองรับรูปจากมือถือทุกรุ่น และแก้การหมุนรูปตาม EXIF)
+// ถ้าแปลงไม่ได้ ใช้ไฟล์เดิม
+async function normalizeSlipImage(file) {
+  try {
+    const bmp = await createImageBitmap(file);
+    const max = 1600;
+    const scale = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    const w = Math.round(bmp.width * scale), h = Math.round(bmp.height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(bmp, 0, 0, w, h);
+    if (bmp.close) bmp.close();
+    const blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", 0.92));
+    return blob ? new File([blob], "slip.jpg", { type: "image/jpeg" }) : file;
+  } catch (e) {
+    return file;
+  }
+}
+
+async function verifySlip(file) {
+  if (!CONFIG.SLIP_VERIFY_ENDPOINT) return { ok: true };
+  const img = await normalizeSlipImage(file);
   const fd = new FormData();
-  fd.append("slip", file);
+  fd.append("slip", img, img.name || "slip.jpg");
   fd.append("packageId", state.pkg ? state.pkg.id : "");
   return fetch(CONFIG.SLIP_VERIFY_ENDPOINT, { method: "POST", body: fd }).then(r => r.json());
 }
