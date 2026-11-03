@@ -296,6 +296,14 @@
   .reg-plain .reg-sample{background:#fff;border:1px solid #e3e9f3;border-radius:12px;margin:0}
   .reg-plain .reg-sample-empty{color:#6b7a90}
   .reg-plain .reg-btn{margin-top:14px}
+  .reg-terms{margin:14px 0 0;padding:14px;border-radius:12px;background:#fff7ed;border:1px solid #fed7aa;font-size:13px;line-height:1.6;color:#7c2d12}
+  .reg-terms-title{margin:0 0 6px;font-weight:700;font-size:14px;color:#9a3412}
+  .reg-terms ol{margin:0 0 10px;padding-left:20px}
+  .reg-terms li{margin-bottom:6px}
+  .reg-accept{display:flex;align-items:flex-start;gap:8px;font-weight:700;color:#0f172a;cursor:pointer}
+  .reg-accept input{width:18px;height:18px;margin-top:2px;flex:0 0 18px}
+  .reg-terms-note{margin:8px 0 0;font-size:12px;color:#9a3412}
+  .reg-link.is-disabled{opacity:.4;pointer-events:none;filter:grayscale(.4)}
   .features .fi .sim-logo{width:36px;height:36px}
   .carrier-title{display:block;font-size:20px;font-weight:700;color:#111;margin:4px 0 16px}
   .carrier-title .req{color:#e11d48}
@@ -788,6 +796,12 @@ function showRegErr(msg) {
   err.style.display = "block";
 }
 
+// เปิดปุ่มลงทะเบียนเมื่อลูกค้ายอมรับเงื่อนไขเท่านั้น
+function regAcceptChange(on) {
+  const go = document.getElementById("regGo");
+  if (go) go.classList.toggle("is-disabled", !on);
+}
+
 function regNext() {
   const serial = (document.getElementById("regSerial").value || "").replace(/\s/g, "");
   if (!/^\d{10,25}$/.test(serial)) { showRegErr("หมายเลข Serial ไม่ถูกต้อง (ตัวเลข 10-25 หลัก)"); return; }
@@ -1030,8 +1044,17 @@ const screens = {
               ? `<img src="${reg.sample}" alt="รูปตัวอย่างลงทะเบียนซิม">`
               : `<div class="reg-sample-empty">ยังไม่ได้ตั้งรูปตัวอย่าง</div>`}
           </div>
+          <div class="reg-terms">
+            <p class="reg-terms-title">⚠️ เงื่อนไขการลงทะเบียนซิม</p>
+            <ol>
+              <li>หลังลงทะเบียนซิมเสร็จ ต้องสมัครเน็ตภายในวันที่ลงทะเบียนซิมเท่านั้น ถ้าเกิน 1 วันหลังลงทะเบียนซิม สมัครเน็ตไม่ได้ ทางร้านจะไม่รับผิดชอบทุกกรณี</li>
+              <li>ซิมใช้ในการสมัครเน็ตเท่านั้น ลูกค้าที่นำซิมไปใช้ในรูปแบบอื่นนอกเหนือจากการสมัครเน็ต ถ้าซิมถูกระงับ หรือรายชื่อของลูกค้าติดแบล็กลิสต์จาก True, DTAC, AIS และเครือข่ายอื่นๆ ทางร้านจะไม่รับผิดชอบทุกกรณี</li>
+            </ol>
+            <label class="reg-accept"><input type="checkbox" id="regAccept" onchange="regAcceptChange(this.checked)"> ข้าพเจ้าได้อ่านและยอมรับเงื่อนไขข้างต้นแล้ว</label>
+            <p class="reg-terms-note">หากไม่ยอมรับเงื่อนไข ทางร้านขอสงวนสิทธิ์ในการลงทะเบียนซิม และไม่สามารถกดปุ่มลงทะเบียนได้</p>
+          </div>
           ${reg.url
-            ? `<a class="reg-btn green reg-link" href="${reg.url}" target="_blank" rel="noopener">ลงทะเบียนซิม</a>`
+            ? `<a id="regGo" class="reg-btn green reg-link is-disabled" href="${reg.url}" target="_blank" rel="noopener">ลงทะเบียนซิม</a>`
             : `<button class="reg-btn" disabled>ยังไม่ได้ตั้งลิงก์ลงทะเบียน</button>`}
         </div>`;
     }
