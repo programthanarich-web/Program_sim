@@ -21,8 +21,22 @@
   .top-left{justify-self:start}
   .top-right{justify-self:end}
   .top-center{display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;min-height:44px}
-  .top-center .logo.has-img{width:auto;height:44px;max-width:200px;background:none}
-  .top-center .logo.has-img img{height:44px;width:auto;max-width:200px;object-fit:contain;display:block}
+  .top-left{display:flex;align-items:center;gap:2px}
+  .top-center .logo.has-img{width:auto;height:64px;max-width:240px;background:none}
+  .top-center .logo.has-img img{height:64px;width:auto;max-width:240px;object-fit:contain;display:block}
+  .menu-btn{width:40px;height:40px;border:0;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:0}
+  .menu-btn span{display:block;width:22px;height:2.5px;background:var(--text);border-radius:2px}
+  .contact-btn{display:inline-block;background:var(--blue);color:#fff;text-decoration:none;font-weight:700;font-size:13px;padding:8px 14px;border-radius:999px;white-space:nowrap}
+  #sideMenu{position:fixed;inset:0;z-index:60;max-width:430px;margin:0 auto}
+  #sideMenu.hidden{display:none !important}
+  .sm-backdrop{position:absolute;inset:0;background:rgba(15,27,51,.45)}
+  .sm-panel{position:absolute;top:0;left:0;bottom:0;width:min(300px,82%);background:#fff;padding:18px 12px;overflow-y:auto;box-shadow:4px 0 20px rgba(0,0,0,.15)}
+  .sm-title{font-weight:800;color:var(--blue);font-size:16px;margin:4px 8px 12px}
+  .sm-item{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;padding:12px 8px;border-radius:12px;font-family:inherit;font-size:15px;color:var(--text);cursor:pointer;text-align:left;text-decoration:none}
+  .sm-item:hover{background:#f1f5fb}
+  .sm-item.disabled{opacity:.5;cursor:not-allowed}
+  .sm-ic{width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+  .sm-ic img{width:100%;height:100%;object-fit:contain;display:block}
   .brand{display:flex;align-items:center;gap:10px}
   .logo{width:34px;height:34px;border-radius:9px;background:var(--blue);display:flex;align-items:center;justify-content:center;position:relative}
   .logo::before{content:"";width:12px;height:16px;background:var(--yellow);border-radius:3px}
@@ -274,14 +288,16 @@
 <!-- ============ Top bar ============ -->
 <header class="topbar">
   <div class="top-left">
+    <button class="menu-btn" onclick="toggleMenu()" aria-label="เมนูทางลัด"><span></span><span></span><span></span></button>
     <button class="back-btn" id="backBtn" onclick="goBack()">‹ กลับ</button>
   </div>
   <div class="top-center" id="brand" onclick="resetTo('home')">
     <div class="logo" id="logoBox"></div>
     <span class="brand-name" id="brandName">ProgramThanarich</span>
   </div>
-  <div class="top-right icon-btns" id="topRight"></div>
+  <div class="top-right" id="topRight"></div>
 </header>
+<div id="sideMenu" class="hidden"></div>
 
 <!-- ============ Hero (แสดงเฉพาะหน้าแรก) ============ -->
 <section class="hero" id="hero">
@@ -396,9 +412,42 @@ function applyLogo() {
   const right = document.getElementById("topRight");
   if (right) {
     right.innerHTML = CONFIG.lineContactUrl
-      ? `<a class="icon-btn" href="${CONFIG.lineContactUrl}" target="_blank" rel="noopener" title="ติดต่อร้านผ่าน LINE">💬</a>`
+      ? `<a class="contact-btn" href="${CONFIG.lineContactUrl}" target="_blank" rel="noopener">ติดต่อร้าน</a>`
       : "";
   }
+  renderSideMenu();
+}
+
+// เมนูทางลัดที่เปิดจากปุ่มขีด 3 ขีด
+function toggleMenu(force) {
+  const m = document.getElementById("sideMenu");
+  if (!m) return;
+  const show = typeof force === "boolean" ? force : m.classList.contains("hidden");
+  m.classList.toggle("hidden", !show);
+}
+function closeMenu() { toggleMenu(false); }
+
+function renderSideMenu() {
+  const m = document.getElementById("sideMenu");
+  if (!m) return;
+  const item = (action, icon, label, disabled) => disabled
+    ? `<button class="sm-item disabled" disabled><span class="sm-ic">${icon}</span><span>${label}</span></button>`
+    : `<button class="sm-item" onclick="${action}"><span class="sm-ic">${icon}</span><span>${label}</span></button>`;
+  const items = [
+    item("closeMenu();startRegister()", menuIconHtml("register", "🗂️"), "ลงทะเบียนซิม"),
+    item("closeMenu();go('net-menu')", menuIconHtml("net", "📶"), "สมัครแพ็กเกจเน็ต"),
+    item("", menuIconHtml("port", "🔄"), "สมัครโปรเบอร์เดิม (เร็ว ๆ นี้)", true),
+    item("", menuIconHtml("esim", "📱"), "รับ E-Sim (เร็ว ๆ นี้)", true)
+  ];
+  if (CONFIG.lineContactUrl) {
+    items.push(`<a class="sm-item" href="${CONFIG.lineContactUrl}" target="_blank" rel="noopener"><span class="sm-ic">💬</span><span>ติดต่อร้านผ่าน LINE</span></a>`);
+  }
+  m.innerHTML = `
+    <div class="sm-backdrop" onclick="closeMenu()"></div>
+    <nav class="sm-panel">
+      <div class="sm-title">ทางลัด</div>
+      ${items.join("")}
+    </nav>`;
 }
 
 // การ์ดเบอร์มงคล (แสดงเฉพาะเมื่อหลังบ้านมีเบอร์ตั้งไว้)
