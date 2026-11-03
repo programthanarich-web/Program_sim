@@ -243,6 +243,17 @@
   .slip-text small{font-size:12px;color:#64748b;margin-top:2px}
   .slip-pick{flex:0 0 auto;padding:8px 14px;border-radius:999px;background:#2563eb;color:#fff;font-size:13px;font-weight:700;white-space:nowrap;box-shadow:0 4px 10px rgba(37,99,235,.25)}
   .slip-drop.has-file .slip-pick{background:#16a34a;box-shadow:0 4px 10px rgba(22,163,74,.25)}
+  .order-no{font-size:14px;color:var(--muted);margin:4px 0 14px}
+  .order-no b{color:#0f172a;letter-spacing:.3px}
+  .ostep-list{display:flex;flex-direction:column;gap:10px;text-align:left;margin:6px 0 16px;padding:14px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0}
+  .ostep{display:flex;align-items:center;gap:12px;font-size:14px;color:#94a3b8}
+  .ostep-dot{flex:0 0 28px;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;background:#e2e8f0;color:#64748b}
+  .ostep.ok{color:#0f172a}
+  .ostep.ok .ostep-dot{background:#22c55e;color:#fff}
+  .ostep.now{color:#0f172a;font-weight:700}
+  .ostep.now .ostep-dot{background:#2563eb;color:#fff;box-shadow:0 0 0 4px rgba(37,99,235,.18)}
+  .next-step{font-size:14px;line-height:1.6;color:#0f172a;margin:0 0 8px}
+  .next-hint{font-size:12px;line-height:1.6;color:var(--muted);margin:0}
   .sample-square .sample-slides img{aspect-ratio:1/1;object-fit:contain;background:#fff}
   .sample-square .sample-empty{aspect-ratio:1/1}
   .sample figcaption{font-size:12px;color:var(--muted);padding:8px 10px;text-align:center}
@@ -1408,6 +1419,89 @@ function payShopOnly(id) {
   }
 }
 
+// ติดตามสถานะคำสั่งซื้อจนกว่าแอดมินจะกดยืนยันการสมัคร
+let orderTimer = null;
+const ORDER_KEY = "program_order_v1";
+
+// ขั้นตอนที่ลูกค้าเห็น (index ตรงกับสถานะของคำสั่งซื้อในหลังบ้าน)
+const ORDER_STEPS = [
+  { label: "ชำระเงินเรียบร้อย" },
+  { label: "ทางร้านตรวจสอบรายการ" },
+  { label: "ทางร้านยืนยันแพ็กเกจและกำลังสมัครให้" },
+  { label: "สมัครเน็ตเรียบร้อย" }
+];
+// new = รอร้านตรวจ (ขั้นที่ 1), confirmed = ร้านยืนยันแล้ว (ขั้นที่ 2)
+const ORDER_STEP_OF = { new: 1, confirmed: 2 };
+
+function stepsHtml(cur) {
+  return `<div class="ostep-list">${ORDER_STEPS.map((s, i) => {
+    const cls = i < cur ? "ok" : i === cur ? "now" : "todo";
+    const mark = i < cur ? "✓" : i === cur ? "…" : String(i + 1);
+    return `<div class="ostep ${cls}"><span class="ostep-dot">${mark}</span><span>${s.label}</span></div>`;
+  }).join("")}</div>`;
+}
+
+function showPending(orderNo, cur = 1) {
+  hero.classList.add("hidden");
+  const contact = CONFIG.lineContactUrl
+    ? `<a class="btn" href="${CONFIG.lineContactUrl}" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;background:#06c755;margin-top:10px">💬 ติดต่อร้านผ่าน LINE</a>`
+    : "";
+  render(`
+    <div class="card result" id="pendingBox">
+      <div class="icon">⏳</div>
+      <h2>อยู่ระหว่างดำเนินการ</h2>
+      ${orderNo ? `<p class="order-no">หมายเลขคำสั่งซื้อ <b>${orderNo}</b></p>` : ""}
+      ${stepsHtml(cur)}
+      <p class="next-step">ขั้นตอนต่อไป: ทางร้านจะตรวจสอบและสมัครเน็ตให้ ไม่ต้องทำอะไรเพิ่ม หน้านี้จะอัปเดตเองเมื่อมีความคืบหน้า</p>
+      <p class="next-hint">หากปิดหน้านี้ไปแล้ว ให้เปิดเว็บเดิมอีกครั้ง หรือแจ้งหมายเลขคำสั่งซื้อให้ร้านทาง LINE</p>
+      ${contact}
+      <button class="btn ghost" style="margin-top:10px" onclick="resetTo('home')">กลับหน้าหลัก</button>
+    </div>`);
+}
+
+function saveOrder(order) {
+  try { sessionStorage.setItem(ORDER_KEY, JSON.stringify(order)); } catch (e) { /* ไม่มี sessionStorage ก็ใช้งานต่อได้ */ }
+}
+function clearOrder() {
+  try { sessionStorage.removeItem(ORDER_KEY); } catch (e) {}
+}
+
+function watchOrder(orderId, orderNo) {
+  clearInterval(orderTimer);
+  saveOrder({ id: orderId, orderNo: orderNo || "" });
+  showPending(orderNo, 1);
+  let lastStep = 1;
+  orderTimer = setInterval(async () => {
+    // หยุดตรวจเมื่อลูกค้าออกจากหน้านี้แล้ว
+    if (!document.getElementById("pendingBox")) { clearInterval(orderTimer); return; }
+    try {
+      const r = await fetch(API_BASE + "/orders/status?id=" + encodeURIComponent(orderId));
+      const d = await r.json();
+      if (d.status === "done") {
+        clearInterval(orderTimer);
+        clearOrder();
+        render(screens.result(true, "สมัครเน็ตเรียบร้อยแล้ว ขอบคุณที่ใช้บริการ"));
+      } else if (d.status === "rejected") {
+        clearInterval(orderTimer);
+        clearOrder();
+        render(screens.result(false, "ไม่สามารถดำเนินการสมัครได้ กรุณาติดต่อร้านค้า", true));
+      } else if (ORDER_STEP_OF[d.status] !== undefined && ORDER_STEP_OF[d.status] !== lastStep) {
+        // วาดหน้าใหม่เฉพาะตอนที่ขั้นตอนเปลี่ยน
+        lastStep = ORDER_STEP_OF[d.status];
+        showPending(orderNo, lastStep);
+      }
+    } catch (e) { /* รอรอบถัดไป */ }
+  }, 5000);
+}
+
+// เปิดหน้าใหม่ในแท็บเดิมแล้วยังมีคำสั่งซื้อค้างอยู่ ให้กลับไปติดตามต่อ
+function resumeOrderWatch() {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(ORDER_KEY) || "null");
+    if (saved && saved.id) watchOrder(saved.id, saved.orderNo);
+  } catch (e) { /* ข้าม */ }
+}
+
 function onSlipPick(input) {
   const f = input.files && input.files[0];
   const name = document.getElementById("slipName");
@@ -1433,7 +1527,7 @@ async function submitPayment() {
       return;
     }
     const amount = firstPriceOf(state.pkg) - shopDiscountInfo(state.pkg).amount;
-    await postJSON(CONFIG.BACKEND_ENDPOINT, {
+    const created = await postJSON(CONFIG.BACKEND_ENDPOINT, {
       serial: state.serial, phone: state.phone,
       package: state.pkg, amount, time: new Date().toISOString()
     });
@@ -1447,7 +1541,13 @@ async function submitPayment() {
     } catch (e) { /* ข้าม */ }
     history_ = ["home"];
     clearSavedState();
-    render(screens.result(true, "ระบบได้รับข้อมูลการชำระเงินเรียบร้อยแล้ว"));
+    if (created && created.id) {
+      // รอแอดมินยืนยันการสมัครเน็ตหลังร้านก่อน จึงค่อยแสดงว่าสำเร็จ
+      watchOrder(created.id, created.orderNo);
+    } else {
+      // ยังติดตามสถานะไม่ได้ (ระบบหลังบ้านยังไม่ตอบกลับหมายเลขคำสั่งซื้อ)
+      showPending("", 1);
+    }
   } catch (e) {
     render(screens.result(false, "เกิดข้อผิดพลาด กรุณาติดต่อร้านค้า", true));
   }
@@ -1468,7 +1568,7 @@ setInterval(() => {
   el.scrollTo({ left: next * w, behavior: "smooth" });
 }, 2000);
 
-loadRemoteSettings().then(() => { restoreState(); render(); initLiff(); });
+loadRemoteSettings().then(() => { restoreState(); render(); initLiff(); resumeOrderWatch(); });
 </script>
 </body>
 </html>
