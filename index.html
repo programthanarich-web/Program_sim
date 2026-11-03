@@ -848,7 +848,17 @@ async function verifySlip(file) {
   const fd = new FormData();
   fd.append("slip", img, img.name || "slip.jpg");
   fd.append("packageId", state.pkg ? state.pkg.id : "");
-  return fetch(CONFIG.SLIP_VERIFY_ENDPOINT, { method: "POST", body: fd }).then(r => r.json());
+  // ไม่ให้รอนานเกินไป: เกิน 30 วินาทีให้แจ้งลูกค้าลองใหม่
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 30000);
+  try {
+    const r = await fetch(CONFIG.SLIP_VERIFY_ENDPOINT, { method: "POST", body: fd, signal: ctrl.signal });
+    return await r.json();
+  } catch (e) {
+    return { ok: false, reason: "ตรวจสอบสลิปใช้เวลานานเกินไป กรุณากดยืนยันการชำระเงินใหม่อีกครั้ง" };
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /* ==========================================================
@@ -1213,19 +1223,33 @@ function validSim(serial, phone) {
 // ดาวน์โหลดรูป QR พร้อมเพย์ไปชำระเงินในแอปธนาคาร (ถ้าดาวน์โหลดตรงไม่ได้ จะเปิดรูปในแท็บใหม่แทน)
 async function downloadQR(url = CONFIG.QR_IMAGE_URL) {
   if (!url) return;
+  // แอปแชต (Messenger, Facebook, Instagram, LINE) มักบล็อกการดาวน์โหลดไฟล์ จึงเปิดหน้าต่างให้บันทึกเองทันที
+  if (/FBAN|FBAV|Messenger|Instagram|Line\//i.test(navigator.userAgent)) {
+    showQRModal(url);
+    return;
+  }
+  const filename = "promptpay-qr.png";
   try {
     const res = await fetch(url);
     if (!res.ok) throw new Error("fetch failed");
     const blob = await res.blob();
+    // มือถือส่วนใหญ่: ใช้เมนูแชร์/บันทึกรูปของเครื่อง
+    const file = new File([blob], filename, { type: blob.type || "image/png" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: "QR พร้อมเพย์" });
+      return;
+    }
+    // เบราว์เซอร์ที่รองรับการดาวน์โหลดไฟล์
     const objUrl = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = objUrl;
-    a.download = "promptpay-qr.png";
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setTimeout(() => URL.revokeObjectURL(objUrl), 1000);
+    setTimeout(() => URL.revokeObjectURL(objUrl), 3000);
   } catch (e) {
+    if (e && e.name === "AbortError") return; // ลูกค้ากดยกเลิกการแชร์เอง
     showQRModal(url);
   }
 }
@@ -1249,7 +1273,8 @@ async function initPayment() {
     state.payment = { orderNo: d.orderNo, qrUrl: d.qrUrl, expiresAt: d.expiresAt };
     box.innerHTML = `<img src="${d.qrUrl}" alt="QR ชำระเงิน" style="width:100%;height:auto;display:block">`;
     document.getElementById("qrMsg").textContent = "กรุณาชำระภายใน 10 นาที ระบบจะตรวจสอบให้อัตโนมัติ";
-    document.getElementById("qrDl").style.display = "block";
+    const dl = document.getElementById("qrDl");
+    if (dl) dl.style.display = "block";
     startPaymentPolling();
   } catch (e) {
     const err = document.getElementById("payErr");
@@ -1285,9 +1310,10 @@ function showQRModal(url) {
   el.innerHTML = `
     <div class="so-box">
       <h3>บันทึกรูป QR</h3>
-      <p>กดค้างที่รูปด้านล่าง แล้วเลือก "บันทึกรูปภาพ" หรือ "Save image"<br>ถ้าเปิดจาก Messenger ให้กดเมนู ⋯ แล้วเลือก "เปิดในเบราว์เซอร์" ก่อน</p>
+      <p>วิธีที่ 1: กดปุ่ม "เปิดรูป QR" ด้านล่าง แล้วกดค้างที่รูป เลือก "บันทึกรูปภาพ"<br>วิธีที่ 2: ถ้าเปิดจาก Messenger / LINE ให้กดเมนู ⋯ แล้วเลือก "เปิดในเบราว์เซอร์" ก่อน จากนั้นกดค้างที่รูปเพื่อบันทึก</p>
       <img src="${url}" alt="QR พร้อมเพย์" style="width:100%;height:auto;display:block;border-radius:10px">
-      <button class="btn ghost" style="margin-top:12px" onclick="document.getElementById('qrModal').remove()">ปิด</button>
+      <a class="btn" href="${url}" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;margin-top:12px">เปิดรูป QR เพื่อบันทึก</a>
+      <button class="btn ghost" style="margin-top:10px" onclick="document.getElementById('qrModal').remove()">ปิด</button>
     </div>`;
   document.body.appendChild(el);
 }
