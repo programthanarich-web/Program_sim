@@ -643,14 +643,10 @@ function shopDiscountInfo(p) {
 }
 
 // ถ้าหลังบ้านตั้ง "รูปหัวเว็บ" ไว้ จะแสดงรูปนั้นแทนหัวข้อแบบข้อความ
+// หัวเว็บใช้ข้อความเดิมเสมอ (รูปหัวเว็บเดิมถูกยกเลิกแล้ว ใช้แบนเนอร์หน้าแรกแทน)
 function applyHero() {
-  if (CONFIG.heroImage) {
-    hero.classList.add("hero-photo");
-    hero.innerHTML = `<img class="hero-img" src="${CONFIG.heroImage}" alt="ProgramThanarich">`;
-  } else {
-    hero.classList.remove("hero-photo");
-    hero.innerHTML = HERO_DEFAULT;
-  }
+  hero.classList.remove("hero-photo");
+  hero.innerHTML = HERO_DEFAULT;
 }
 
 // จำสถานะการสมัครไว้ในแท็บเดียวกัน เผื่อหน้าเว็บถูกโหลดใหม่ตอนกลับจากแอปธนาคาร
