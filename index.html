@@ -1533,7 +1533,8 @@ async function submitPayment() {
     const amount = firstPriceOf(state.pkg) - shopDiscountInfo(state.pkg).amount;
     const created = await postJSON(CONFIG.BACKEND_ENDPOINT, {
       serial: state.serial, phone: state.phone,
-      package: state.pkg, amount, time: new Date().toISOString()
+      package: state.pkg, amount, time: new Date().toISOString(),
+      lineUserId: state.lineUser ? state.lineUser.userId : ""
     });
     // แจ้งไลน์ร้านเป็นเรื่องรอง ถ้าพลาดไม่ควรทำให้ลูกค้าเห็นว่าชำระไม่สำเร็จ
     try {
