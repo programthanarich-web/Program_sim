@@ -214,6 +214,33 @@
   .sample-empty{aspect-ratio:16/10;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;text-align:center;padding:12px}
   .sample figcaption{font-size:12px;color:var(--muted);padding:8px 10px;text-align:center}
   .hidden{display:none !important}
+  /* หน้าลงทะเบียนซิม (โทนมืดตามดีไซน์ต้นแบบ) */
+  .reg-dark{background:#0f172a;color:#e2e8f0;border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,0.08);margin-top:8px}
+  .reg-title{font-size:16px;font-weight:800;margin-bottom:6px}
+  .reg-sub{font-size:13px;color:#94a3b8;margin-bottom:12px}
+  .reg-label{display:block;font-size:13px;font-weight:700;color:#94a3b8;margin:12px 0 6px}
+  .reg-inp{width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 14px;color:#fff;font-size:15px;outline:none;font-family:inherit}
+  .reg-inp.mono{font-family:monospace}
+  .reg-btn{width:100%;margin-top:12px;background:linear-gradient(135deg,#4f46e5,#7c3aed);border:none;border-radius:10px;padding:12px;color:#fff;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit}
+  .reg-btn.green{background:linear-gradient(135deg,#059669,#10b981)}
+  .reg-btn.ghost{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-weight:600}
+  .reg-btn:disabled{opacity:.6}
+  .reg-found{background:rgba(5,150,105,0.08);border:1px solid rgba(5,150,105,0.3);border-radius:12px;padding:14px;margin-top:10px}
+  .reg-found-h{color:#6ee7b7;font-weight:700;margin-bottom:8px}
+  .reg-kv{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:#94a3b8}
+  .reg-kv b{color:#e2e8f0;font-family:monospace}
+  .reg-logo{display:flex;justify-content:center;margin-bottom:10px}
+  .sim-logo{width:56px;height:56px;object-fit:contain;border-radius:10px}
+  .sim-logo-empty{font-size:28px;line-height:56px}
+  .reg-logo .sim-logo{width:120px;height:auto;max-height:60px}
+  .features .fi .sim-logo{width:36px;height:36px}
+  .carrier-title{display:block;font-size:20px;font-weight:700;color:#111;margin:4px 0 16px}
+  .carrier-title .req{color:#e11d48}
+  .carrier-list{display:flex;flex-direction:column;gap:14px}
+  .carrier-btn{width:100%;height:104px;display:flex;align-items:center;justify-content:center;background:#fff;border:2px solid #d9dde3;border-radius:18px;cursor:pointer;padding:12px 24px;transition:border-color .15s,box-shadow .15s}
+  .carrier-btn:hover,.carrier-btn:focus-visible{border-color:#0b5ed7;box-shadow:0 2px 10px rgba(11,94,215,0.15);outline:none}
+  .carrier-btn img{max-width:80%;max-height:56px;object-fit:contain}
+  .reg-err{display:none;color:#f87171;background:rgba(239,68,68,0.08);border-radius:10px;padding:10px 12px;margin-top:10px;font-size:13px}
 </style>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
@@ -547,9 +574,42 @@ function applyHero() {
   }
 }
 
-function go(screen) { history_.push(screen); render(); window.scrollTo(0, 0); }
-function goBack()   { if (history_.length > 1) history_.pop(); render(); window.scrollTo(0, 0); }
-function resetTo(screen) { history_ = ["home"]; if (screen !== "home") history_.push(screen); render(); window.scrollTo(0, 0); }
+// จำสถานะการสมัครไว้ในแท็บเดียวกัน เผื่อหน้าเว็บถูกโหลดใหม่ตอนกลับจากแอปธนาคาร
+const SAVE_KEY = "program_flow_v1";
+function saveState() {
+  try {
+    sessionStorage.setItem(SAVE_KEY, JSON.stringify({
+      history: history_,
+      mode: state.mode,
+      phone: state.phone,
+      pkgId: state.pkg ? state.pkg.id : null,
+      regCarrier: state.regCarrier || null
+    }));
+  } catch (e) { /* เบราว์เซอร์บางตัวใช้ไม่ได้ ข้ามไป */ }
+}
+function clearSavedState() {
+  try { sessionStorage.removeItem(SAVE_KEY); } catch (e) { }
+}
+function restoreState() {
+  let saved = null;
+  try { saved = JSON.parse(sessionStorage.getItem(SAVE_KEY) || "null"); } catch (e) { saved = null; }
+  if (!saved || !Array.isArray(saved.history)) return;
+  state.mode = saved.mode || null;
+  state.phone = saved.phone || "";
+  state.pkg = saved.pkgId ? (PACKAGES.find(p => p.id === saved.pkgId) || null) : null;
+  let hist = saved.history.filter(s => screens[s]);
+  if (!hist.length) hist = ["home"];
+  const last = hist[hist.length - 1];
+  if (last === "payment" && !state.pkg) hist = ["home"];
+  if (last === "sim-form" && !state.mode) hist = ["home"];
+  state.regCarrier = saved.regCarrier || null;
+  if (last === "sim-register" && !state.regCarrier) hist = ["home", "sim-carrier"];
+  history_ = hist;
+}
+
+function go(screen) { history_.push(screen); saveState(); render(); window.scrollTo(0, 0); }
+function goBack()   { if (history_.length > 1) history_.pop(); saveState(); render(); window.scrollTo(0, 0); }
+function resetTo(screen) { history_ = ["home"]; if (screen !== "home") history_.push(screen); saveState(); render(); window.scrollTo(0, 0); }
 
 /* ==========================================================
    ฟังก์ชันส่งข้อมูล (ต่อ backend จริงภายหลัง)
@@ -564,6 +624,83 @@ async function postJSON(url, data) {
   return res.json();
 }
 const sendToLine = payload => postJSON(CONFIG.LINE_ENDPOINT, { message: payload });
+
+/* ----- ลงทะเบียนซิม ----- */
+const SIM_CARRIERS = [
+  { key: "truemove H", label: "ลงทะเบียนซิมทรู", desc: "ซิมทรูมูฟ เอช" },
+  { key: "dtac", label: "ลงทะเบียนซิมดีแทค", desc: "ซิม dtac" },
+  { key: "AIS", label: "ลงทะเบียนซิมเอไอเอส", desc: "ซิม AIS" }
+];
+
+function carrierLabel(key) {
+  const c = SIM_CARRIERS.find(x => x.key === key);
+  return c ? c.label : "ลงทะเบียนซิม";
+}
+
+function carrierLogoBox(key) {
+  const url = (CONFIG.carrierLogos || {})[key];
+  return url
+    ? `<img class="sim-logo" src="${url}" alt="${key}">`
+    : `<span class="sim-logo-empty">📶</span>`;
+}
+
+function startRegister() {
+  state.regCarrier = null;
+  state.regStep = 1;
+  state.regSerial = "";
+  go("sim-carrier");
+}
+
+function pickCarrier(key) {
+  state.regCarrier = key;
+  state.regStep = 1;
+  state.regSerial = "";
+  go("sim-register");
+}
+
+function showRegErr(msg) {
+  const err = document.getElementById("regErr");
+  if (!err) return;
+  err.textContent = msg;
+  err.style.display = "block";
+}
+
+function regNext() {
+  const serial = (document.getElementById("regSerial").value || "").replace(/\s/g, "");
+  if (!/^\d{10,25}$/.test(serial)) { showRegErr("หมายเลข Serial ไม่ถูกต้อง (ตัวเลข 10-25 หลัก)"); return; }
+  state.regSerial = serial;
+  state.regStep = 2;
+  render();
+}
+
+function regBackStep() {
+  state.regStep = 1;
+  render();
+}
+
+async function regSubmit() {
+  const phone = (document.getElementById("regPhone").value || "").replace(/[-\s]/g, "").trim();
+  if (phone && !/^0\d{8,9}$/.test(phone)) { showRegErr("เบอร์มือถือไม่ถูกต้อง"); return; }
+  const btn = document.getElementById("regSubmit");
+  btn.disabled = true;
+  btn.textContent = "กำลังบันทึก...";
+  try {
+    const r = await postJSON(CONFIG.BACKEND_ENDPOINT, {
+      serial: state.regSerial, phone,
+      package: carrierLabel(state.regCarrier), amount: 0, time: new Date().toISOString()
+    });
+    if (!r || !r.ok) throw new Error("save failed");
+    state.regStep = 1;
+    state.regSerial = "";
+    history_ = ["home"];
+    clearSavedState();
+    render(screens.result(true, "บันทึกการลงทะเบียนซิมเรียบร้อยแล้ว ร้านจะตรวจสอบและติดต่อกลับ"));
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = "✅ บันทึกการลงทะเบียน";
+    showRegErr("บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+  }
+}
 
 function verifySlip(file) {
   if (!CONFIG.SLIP_VERIFY_ENDPOINT) return Promise.resolve({ ok: true });
@@ -585,8 +722,8 @@ const screens = {
         <div class="sub">เลือกวิธีที่สะดวกกับคุณ</div>
 
         <div class="features">
-          <button class="feat disabled">
-            <div class="fi">🗂️</div><b>ลงทะเบียนซิม</b><span>เร็ว ๆ นี้</span>
+          <button class="feat" onclick="startRegister()">
+            <div class="fi">🗂️</div><b>ลงทะเบียนซิม</b><span>กรอก Serial และเบอร์ที่ได้รับ</span>
           </button>
           <button class="feat" onclick="go('net-menu')">
             <div class="fi">📶</div><b>สมัครแพ็กเกจเน็ต</b><span>เติมเงินเอง หรือสมัครกับทางร้าน</span>
@@ -701,6 +838,55 @@ const screens = {
         <div class="err" id="formErr"></div>
         <button class="btn" id="simSubmit" onclick="submitSim()">ยืนยันข้อมูล →</button>
         <button class="btn ghost" style="margin-top:10px" onclick="goBack()">ย้อนกลับ</button>
+      </div>`;
+  },
+
+  "sim-carrier"() {
+    hero.classList.add("hidden");
+    return `
+      <div class="card">
+        <label class="carrier-title">เลือกเครือข่ายที่ต้องการลงทะเบียน <span class="req">*</span></label>
+        <div class="carrier-list">
+          ${SIM_CARRIERS.map(c => {
+            const url = (CONFIG.carrierLogos || {})[c.key];
+            return `
+            <button class="carrier-btn" onclick="pickCarrier('${c.key}')" aria-label="${c.label}">
+              ${url ? `<img src="${url}" alt="${c.key}">` : ""}
+            </button>`;
+          }).join("")}
+        </div>
+      </div>`;
+  },
+
+  "sim-register"() {
+    hero.classList.add("hidden");
+    const step = state.regStep || 1;
+    const title = carrierLabel(state.regCarrier);
+    if (step === 1) {
+      return `
+        <div class="reg-dark">
+          <div class="reg-logo">${carrierLogoBox(state.regCarrier)}</div>
+          <div class="reg-title">📲 ${title}</div>
+          <div class="reg-sub">กรอกเลข Serial ที่พิมพ์อยู่บนซิม</div>
+          <label class="reg-label" for="regSerial">เลข Serial ซิม (8966...)</label>
+          <input id="regSerial" class="reg-inp mono" inputmode="numeric" placeholder="896604..." value="${state.regSerial || ""}">
+          <div class="reg-err" id="regErr"></div>
+          <button class="reg-btn" onclick="regNext()">ถัดไป →</button>
+        </div>`;
+    }
+    return `
+      <div class="reg-dark">
+        <div class="reg-logo">${carrierLogoBox(state.regCarrier)}</div>
+        <div class="reg-title">📲 ${title}</div>
+        <div class="reg-found">
+          <div class="reg-found-h">📦 รับ Serial แล้ว — กรอกเบอร์ที่ได้รับ</div>
+          <div class="reg-kv"><span>Serial</span><b>${state.regSerial}</b></div>
+        </div>
+        <label class="reg-label" for="regPhone">เบอร์โทรที่ได้รับ (ถ้ามี)</label>
+        <input id="regPhone" class="reg-inp" type="tel" inputmode="numeric" maxlength="12" placeholder="0812345678">
+        <div class="reg-err" id="regErr"></div>
+        <button class="reg-btn green" id="regSubmit" onclick="regSubmit()">✅ บันทึกการลงทะเบียน</button>
+        <button class="reg-btn ghost" onclick="regBackStep()">แก้ไข Serial</button>
       </div>`;
   },
 
@@ -1065,13 +1251,14 @@ async function submitPayment() {
       });
     } catch (e) { /* ข้าม */ }
     history_ = ["home"];
+    clearSavedState();
     render(screens.result(true, "ระบบได้รับข้อมูลการชำระเงินเรียบร้อยแล้ว"));
   } catch (e) {
     render(screens.result(false, "เกิดข้อผิดพลาด กรุณาติดต่อร้านค้า", true));
   }
 }
 
-loadRemoteSettings().then(() => { render(); initLiff(); });
+loadRemoteSettings().then(() => { restoreState(); render(); initLiff(); });
 </script>
 </body>
 </html>
