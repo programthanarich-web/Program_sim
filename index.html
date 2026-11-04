@@ -323,6 +323,9 @@
   .carrier-btn{width:100%;height:140px;display:flex;align-items:center;justify-content:center;background:#fff;border:2px solid #d9dde3;border-radius:18px;cursor:pointer;padding:12px 24px;transition:border-color .15s,box-shadow .15s}
   .carrier-btn:hover,.carrier-btn:focus-visible{border-color:#0b5ed7;box-shadow:0 2px 10px rgba(11,94,215,0.15);outline:none}
   .carrier-btn img{max-width:85%;max-height:100px;object-fit:contain}
+  .carrier-btn.is-off{opacity:.45;cursor:not-allowed;background:#f3f4f6}
+  .carrier-btn.is-off:hover{border-color:#d9dde3;box-shadow:none}
+  .carrier-btn .off-note{display:block;margin-top:6px;font-size:12px;color:#e11d48;font-weight:600}
   .m2{padding:18px 16px}
   .m2-step{font-size:13px;color:#6b7280;margin:16px 0 4px}
   .m2-title{display:block;font-size:17px;font-weight:700;color:#111;margin:0 0 10px}
@@ -1333,9 +1336,11 @@ const screens = {
         <div class="carrier-list">
           ${SIM_CARRIERS.map(c => {
             const url = (CONFIG.carrierLogos || {})[c.key];
+            const on = (CONFIG.month2Carriers || {})[c.key] !== false;
             return `
-            <button class="carrier-btn" onclick="m2PickCarrier('${c.key}')" aria-label="${c.key}">
+            <button class="carrier-btn ${on ? "" : "is-off"}" ${on ? `onclick="m2PickCarrier('${c.key}')"` : "disabled"} aria-label="${c.key}">
               ${url ? `<img src="${url}" alt="${c.key}">` : `<b>${c.key}</b>`}
+              ${on ? "" : `<small class="off-note">ปิดให้บริการต่อแพ็กเกจเดือนที่ 2</small>`}
             </button>`;
           }).join("")}
         </div>
