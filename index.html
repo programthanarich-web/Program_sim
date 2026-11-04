@@ -1298,7 +1298,6 @@ const screens = {
   "month2"() {
     hero.classList.add("hidden");
     const m = m2Init();
-    const reg = (CONFIG.carrierRegister || {})[m.carrier] || {};
     return `
       <div class="card m2">
         <div class="m2-step">ขั้นตอนที่ 1</div>
@@ -1324,9 +1323,9 @@ const screens = {
 
         <div class="m2-sample">
           <div class="m2-sample-h">ตัวอย่างรูปภาพ</div>
-          ${reg.sample
-            ? `<img src="${reg.sample}" alt="ตัวอย่างรูปยืนยันเบอร์">`
-            : `<div class="m2-sample-empty">ยังไม่ได้ตั้งรูปตัวอย่างของเครือข่ายนี้</div>`}
+          ${CONFIG.month2Sample
+            ? `<img src="${CONFIG.month2Sample}" alt="ตัวอย่างรูปยืนยันเบอร์">`
+            : `<div class="m2-sample-empty">ยังไม่ได้ตั้งรูปตัวอย่างต่อแพ็กเกจเดือนที่ 2 (ตั้งได้ที่หลังบ้าน)</div>`}
         </div>
 
         <label class="m2-agree"><input type="checkbox" id="m2Agree" ${m.agree ? "checked" : ""} onchange="m2Set('agree', this.checked)"> ยืนยันความถูกต้อง</label>
