@@ -499,7 +499,7 @@ function renderSideMenu() {
   const items = [
     item("closeMenu();startRegister()", menuIconHtml("register", "🗂️"), quickLabel("register", "ลงทะเบียนซิม")),
     item("closeMenu();go('net-carrier')", menuIconHtml("net", "📶"), quickLabel("net", "สมัครแพ็กเกจเน็ต")),
-    item("closeMenu();go('month2')", menuIconHtml("port", "🔄"), quickLabel("port", "ต่อแพ็กเกจเดือน 2")),
+    item("closeMenu();go('month2-carrier')", menuIconHtml("port", "🔄"), quickLabel("port", "ต่อแพ็กเกจเดือน 2")),
     item("", menuIconHtml("esim", "📱"), quickLabel("esim", "รับ E-Sim") + " (เร็ว ๆ นี้)", true)
   ];
   if (CONFIG.lineContactUrl) {
@@ -826,10 +826,13 @@ function m2Set(key, value) {
   m2Refresh();
 }
 
-function m2Pick(key) {
-  m2Init().carrier = key;
-  m2Init().err = "";
-  render();
+// เลือกเครือข่ายแล้วไปหน้ากรอกข้อมูลเดือนที่ 2
+function m2PickCarrier(key) {
+  const m = m2Init();
+  if (m.carrier !== key) { m.confirmUrl = ""; m.agree = false; }
+  m.carrier = key;
+  m.err = "";
+  go("month2");
 }
 
 async function m2Upload(input) {
@@ -1050,7 +1053,7 @@ const screens = {
           <button class="qi" onclick="go('net-carrier')">
             <div class="qi-icon">${menuIconHtml("net", "📶")}</div><b>${quickLabel("net", "สมัครแพ็กเกจเน็ต")}</b>
           </button>
-          <button class="qi" onclick="go('month2')">
+          <button class="qi" onclick="go('month2-carrier')">
             <div class="qi-icon">${menuIconHtml("port", "🔄")}</div><b>${quickLabel("port", "ต่อแพ็กเกจเดือน 2")}</b>
           </button>
           <button class="qi disabled">
@@ -1321,6 +1324,25 @@ const screens = {
       </div>`;
   },
 
+  // ต่อแพ็กเกจเดือนที่ 2: เลือกเครือข่ายก่อน แล้วค่อยกรอกข้อมูล
+  "month2-carrier"() {
+    hero.classList.add("hidden");
+    return `
+      <div class="card">
+        <label class="carrier-title">เลือกเครือข่ายมือถือที่ต้องการต่อ <span class="req">*</span></label>
+        <div class="carrier-list">
+          ${SIM_CARRIERS.map(c => {
+            const url = (CONFIG.carrierLogos || {})[c.key];
+            return `
+            <button class="carrier-btn" onclick="m2PickCarrier('${c.key}')" aria-label="${c.key}">
+              ${url ? `<img src="${url}" alt="${c.key}">` : `<b>${c.key}</b>`}
+            </button>`;
+          }).join("")}
+        </div>
+        <button class="btn ghost" style="margin-top:14px" onclick="goBack()">ย้อนกลับ</button>
+      </div>`;
+  },
+
   // เดือนที่ 2: กรอกเบอร์ อัปโหลดรูปยืนยัน ติ๊กยืนยัน แล้วเลือกแพ็กเกจ
   "month2"() {
     hero.classList.add("hidden");
@@ -1328,22 +1350,10 @@ const screens = {
     return `
       <div class="card m2">
         <div class="m2-step">ขั้นตอนที่ 1</div>
-        <div class="m2-title">เลือกเครือข่ายมือถือ <span class="req">*</span></div>
-        <div class="m2-carriers">
-          ${SIM_CARRIERS.map(c => {
-            const url = (CONFIG.carrierLogos || {})[c.key];
-            return `
-            <button type="button" class="m2-carrier ${m.carrier === c.key ? "on" : ""}" onclick="m2Pick('${c.key}')" aria-label="${c.label}">
-              ${url ? `<img src="${url}" alt="${c.key}">` : `<span>${c.key}</span>`}
-            </button>`;
-          }).join("")}
-        </div>
-
-        <div class="m2-step">ขั้นตอนที่ 2</div>
         <label class="m2-title" for="m2Phone">กรอกเบอร์โทรศัพท์ <span class="req">*</span></label>
         <input id="m2Phone" class="m2-input" type="tel" inputmode="numeric" maxlength="10" placeholder="กรอกเบอร์โทรศัพท์" value="${esc(m.phone)}" oninput="m2Set('phone', this.value)">
 
-        <div class="m2-step">ขั้นตอนที่ 3</div>
+        <div class="m2-step">ขั้นตอนที่ 2</div>
         <div class="m2-title">อัปโหลดรูปข้อความยืนยันเบอร์ <span class="req">*</span></div>
         <label class="m2-upload" for="m2File">${m.confirmUrl ? "✅ อัปโหลดรูปแล้ว (กดเพื่อเปลี่ยน)" : m.uploading ? "กำลังอัปโหลด..." : "🖼️ อัปโหลดรูปภาพ"}</label>
         <input type="file" id="m2File" accept="image/*" class="sr-only" onchange="m2Upload(this)">
