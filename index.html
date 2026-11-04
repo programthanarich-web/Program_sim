@@ -1361,7 +1361,6 @@ const screens = {
             return `
             <button class="carrier-btn ${on ? "" : "is-off"}" ${on ? `onclick="m2PickCarrier('${c.key}')"` : "disabled"} aria-label="${c.key}">
               ${url ? `<img src="${url}" alt="${c.key}">` : `<b>${c.key}</b>`}
-              ${on ? "" : `<small class="off-note">ปิดให้บริการต่อแพ็กเกจเดือนที่ 2</small>`}
             </button>`;
           }).join("")}
         </div>
