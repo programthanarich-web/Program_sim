@@ -1423,7 +1423,7 @@ const screens = {
           </div>
           <span class="pk-more">ดูรายละเอียดทั้งหมด →</span>
         </div>
-        ${planCardsHtml(PACKAGES.filter(p => !p.month2 && carrierOf(p) === netCarrierKey()))}
+        ${planCardsHtml(PACKAGES.filter(p => !p.month2 && carrierOf(p) === netCarrierKey() && (state.mode !== "shop" || p.shopVisible)))}
       </div>`;
   },
 
