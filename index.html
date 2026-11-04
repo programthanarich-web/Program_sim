@@ -1198,6 +1198,27 @@ const screens = {
       </div>`;
   },
 
+  // dtac / AIS: กรอกเบอร์ลูกค้า พร้อมรูปตัวอย่างเดียวกับต่อแพ็กเกจเดือนที่ 2 ของเครือข่ายนั้น
+  "net-phone"() {
+    hero.classList.add("hidden");
+    const url = (CONFIG.month2Samples || {})[netCarrierKey()];
+    return `
+      <div class="card m2">
+        <div class="m2-step">ขั้นตอนที่ 1</div>
+        <label class="m2-title" for="netPhone">กรอกเบอร์โทรศัพท์ <span class="req">*</span></label>
+        <input id="netPhone" class="m2-input" type="tel" inputmode="numeric" maxlength="10" placeholder="กรอกเบอร์โทรศัพท์" value="${esc(state.phone || "")}">
+        <div class="m2-sample">
+          <div class="m2-sample-h">ตัวอย่างรูปภาพ</div>
+          ${url
+            ? `<img src="${url}" alt="ตัวอย่างรูปยืนยันเบอร์">`
+            : `<div class="m2-sample-empty">ยังไม่ได้ตั้งรูปตัวอย่างของเครือข่ายนี้ (ตั้งได้ที่หลังบ้าน)</div>`}
+        </div>
+        <div class="err" id="netErr"></div>
+        <button class="btn" onclick="netPhoneNext()">ถัดไป →</button>
+        <button class="btn ghost" style="margin-top:10px" onclick="goBack()">ย้อนกลับ</button>
+      </div>`;
+  },
+
   "net-menu"() {
     hero.classList.add("hidden");
     return `
@@ -1366,9 +1387,9 @@ const screens = {
 
         <div class="m2-sample">
           <div class="m2-sample-h">ตัวอย่างรูปภาพ</div>
-          ${CONFIG.month2Sample
-            ? `<img src="${CONFIG.month2Sample}" alt="ตัวอย่างรูปยืนยันเบอร์">`
-            : `<div class="m2-sample-empty">ยังไม่ได้ตั้งรูปตัวอย่างต่อแพ็กเกจเดือนที่ 2 (ตั้งได้ที่หลังบ้าน)</div>`}
+          ${((CONFIG.month2Samples || {})[m.carrier])
+            ? `<img src="${(CONFIG.month2Samples || {})[m.carrier]}" alt="ตัวอย่างรูปยืนยันเบอร์">`
+            : `<div class="m2-sample-empty">ยังไม่ได้ตั้งรูปตัวอย่างของเครือข่ายนี้ (ตั้งได้ที่หลังบ้าน)</div>`}
         </div>
 
         <label class="m2-agree"><input type="checkbox" id="m2Agree" ${m.agree ? "checked" : ""} onchange="m2Set('agree', this.checked)"> ยืนยันความถูกต้อง</label>
@@ -1581,7 +1602,26 @@ function startFlow(mode) {
   state.phone = "";
   state.shipping = needsSimForm() ? null : { carrier: netCarrierKey() };
   if (needsSimForm()) go("sim-form");
-  else go("packages");
+  else go("net-phone");
+}
+
+function netPhoneNext() {
+  const phone = (document.getElementById("netPhone").value || "").replace(/[-\s]/g, "").trim();
+  const err = document.getElementById("netErr");
+  if (!/^0\d{8,9}$/.test(phone)) {
+    err.textContent = "กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง";
+    err.style.display = "block";
+    return;
+  }
+  state.phone = phone;
+  state.serial = "";
+  state.shipping = { carrier: netCarrierKey() };
+  if (state.skipToPayment) {
+    state.skipToPayment = false;
+    go("payment");
+  } else {
+    go("packages");
+  }
 }
 
 function validSim(serial, phone) {
@@ -1779,11 +1819,12 @@ function payShopOnly(id) {
   closeShopOnly();
   state.mode = "shop";
   state.pkg = PACKAGES.find(p => p.id === id);
-  if (!needsSimForm() || (state.serial && state.phone)) {
+  const ready = needsSimForm() ? (state.serial && state.phone) : state.phone;
+  if (ready) {
     go("payment");
   } else {
     state.skipToPayment = true;
-    go("sim-form");
+    go(needsSimForm() ? "sim-form" : "net-phone");
   }
 }
 
