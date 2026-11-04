@@ -498,7 +498,7 @@ function renderSideMenu() {
     : `<button class="sm-item" onclick="${action}"><span class="sm-ic">${icon}</span><span>${label}</span></button>`;
   const items = [
     item("closeMenu();startRegister()", menuIconHtml("register", "🗂️"), quickLabel("register", "ลงทะเบียนซิม")),
-    item("closeMenu();go('net-menu')", menuIconHtml("net", "📶"), quickLabel("net", "สมัครแพ็กเกจเน็ต")),
+    item("closeMenu();go('net-carrier')", menuIconHtml("net", "📶"), quickLabel("net", "สมัครแพ็กเกจเน็ต")),
     item("closeMenu();go('month2')", menuIconHtml("port", "🔄"), quickLabel("port", "ต่อแพ็กเกจเดือน 2")),
     item("", menuIconHtml("esim", "📱"), quickLabel("esim", "รับ E-Sim") + " (เร็ว ๆ นี้)", true)
   ];
@@ -752,7 +752,8 @@ function saveState() {
       pkgId: state.pkg ? state.pkg.id : null,
       pkgData: state.pkg && String(state.pkg.id).startsWith("lucky:") ? state.pkg : null,
       shipping: state.shipping || null,
-      regCarrier: state.regCarrier || null
+      regCarrier: state.regCarrier || null,
+      netCarrier: state.netCarrier || null
     }));
   } catch (e) { /* เบราว์เซอร์บางตัวใช้ไม่ได้ ข้ามไป */ }
 }
@@ -773,6 +774,7 @@ function restoreState() {
   if (last === "payment" && !state.pkg) hist = ["home"];
   if (last === "sim-form" && !state.mode) hist = ["home"];
   state.regCarrier = saved.regCarrier || null;
+  state.netCarrier = saved.netCarrier || null;
   if (last === "sim-register" && !state.regCarrier) hist = ["home", "sim-carrier"];
   history_ = hist;
 }
@@ -794,6 +796,12 @@ async function postJSON(url, data) {
   return res.json();
 }
 const sendToLine = payload => postJSON(CONFIG.LINE_ENDPOINT, { message: payload });
+
+// เลือกเครือข่ายก่อนสมัครแพ็กเกจเน็ต แล้วไปหน้าเลือกเติมเงินเอง / กับทางร้าน
+function pickNetCarrier(key) {
+  state.netCarrier = key;
+  go("net-menu");
+}
 
 /* ----- ต่อแพ็กเกจเดือนที่ 2 ----- */
 function m2Init() {
@@ -1039,7 +1047,7 @@ const screens = {
           <button class="qi" onclick="startRegister()">
             <div class="qi-icon">${menuIconHtml("register", "🗂️")}</div><b>${quickLabel("register", "ลงทะเบียนซิม")}</b>
           </button>
-          <button class="qi" onclick="go('net-menu')">
+          <button class="qi" onclick="go('net-carrier')">
             <div class="qi-icon">${menuIconHtml("net", "📶")}</div><b>${quickLabel("net", "สมัครแพ็กเกจเน็ต")}</b>
           </button>
           <button class="qi" onclick="go('month2')">
@@ -1162,6 +1170,25 @@ const screens = {
         <button class="btn" style="margin-top:14px" onclick="luckyNext()">ไปหน้าชำระเงิน →</button>
       </div>
       <button class="btn ghost" onclick="goBack()">ย้อนกลับ</button>`;
+  },
+
+  // สมัครแพ็กเกจเน็ต: ให้ลูกค้าเลือกเครือข่ายก่อน แล้วค่อยเลือกเติมเงินเอง หรือกับทางร้าน
+  "net-carrier"() {
+    hero.classList.add("hidden");
+    return `
+      <div class="card">
+        <label class="carrier-title">เลือกเครือข่ายมือถือที่ต้องการสมัคร <span class="req">*</span></label>
+        <div class="carrier-list">
+          ${SIM_CARRIERS.map(c => {
+            const url = (CONFIG.carrierLogos || {})[c.key];
+            return `
+            <button class="carrier-btn" onclick="pickNetCarrier('${c.key}')" aria-label="${c.key}">
+              ${url ? `<img src="${url}" alt="${c.key}">` : `<b>${c.key}</b>`}
+            </button>`;
+          }).join("")}
+        </div>
+        <button class="btn ghost" style="margin-top:14px" onclick="goBack()">ย้อนกลับ</button>
+      </div>`;
   },
 
   "net-menu"() {
@@ -1340,15 +1367,6 @@ const screens = {
     const list = PACKAGES.filter(p => p.month2);
     return `
       <div class="card">
-        <div class="pk-head">
-          <div class="pk-title">
-            <span class="pk-gift">📶</span>
-            <div>
-              <h2>แพ็กเกจเดือนที่ 2</h2>
-              <div class="pk-sub">เลือกแพ็กเกจที่ต้องการต่อในเดือนที่ 2</div>
-            </div>
-          </div>
-        </div>
         ${list.length
           ? planCardsHtml(list)
           : `<p class="hint" style="text-align:center;padding:20px 0">ยังไม่มีแพ็กเกจเดือนที่ 2 ในขณะนี้ กรุณาติดต่อร้าน</p>`}
