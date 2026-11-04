@@ -1204,17 +1204,16 @@ const screens = {
     const url = (CONFIG.month2Samples || {})[netCarrierKey()];
     return `
       <div class="card m2">
-        <div class="m2-step">ขั้นตอนที่ 1</div>
-        <label class="m2-title" for="netPhone">กรอกเบอร์โทรศัพท์ <span class="req">*</span></label>
-        <input id="netPhone" class="m2-input" type="tel" inputmode="numeric" maxlength="10" placeholder="กรอกเบอร์โทรศัพท์" value="${esc(state.phone || "")}">
         <div class="m2-sample">
           <div class="m2-sample-h">ตัวอย่างรูปภาพ</div>
           ${url
             ? `<img src="${url}" alt="ตัวอย่างรูปยืนยันเบอร์">`
             : `<div class="m2-sample-empty">ยังไม่ได้ตั้งรูปตัวอย่างของเครือข่ายนี้ (ตั้งได้ที่หลังบ้าน)</div>`}
         </div>
+        <label class="m2-title" for="netPhone">กรอกเบอร์โทรศัพท์ <span class="req">*</span></label>
+        <input id="netPhone" class="m2-input" type="tel" inputmode="numeric" maxlength="10" placeholder="กรอกเบอร์โทรศัพท์" value="${esc(state.phone || "")}">
         <div class="err" id="netErr"></div>
-        <button class="btn" onclick="netPhoneNext()">ถัดไป →</button>
+        <button class="btn" onclick="netPhoneNext()">เลือกแพ็กเกจเน็ต →</button>
         <button class="btn ghost" style="margin-top:10px" onclick="goBack()">ย้อนกลับ</button>
       </div>`;
   },
