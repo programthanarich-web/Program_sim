@@ -418,7 +418,8 @@ const CONFIG = {
 async function loadRemoteSettings() {
   if (!CONFIG.SETTINGS_ENDPOINT) return;
   try {
-    const res = await fetch(CONFIG.SETTINGS_ENDPOINT);
+    // no-store: ให้ได้การตั้งค่าล่าสุดจากหลังบ้านเสมอ ไม่ใช้ค่าที่จำไว้ในเบราว์เซอร์
+    const res = await fetch(CONFIG.SETTINGS_ENDPOINT, { cache: "no-store" });
     const { PACKAGES: rp, SELF_STEPS: rs, ...rest } = await res.json();
     Object.assign(CONFIG, rest);
     if (USE_REMOTE_PACKAGES && Array.isArray(rp) && rp.length) PACKAGES = rp;
