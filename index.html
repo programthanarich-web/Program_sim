@@ -1364,7 +1364,7 @@ const screens = {
 
   "month2-packages"() {
     hero.classList.add("hidden");
-    const list = PACKAGES.filter(p => p.month2);
+    const list = PACKAGES.filter(p => p.month2 && carrierOf(p) === (state.m2 && state.m2.carrier ? state.m2.carrier : "truemove H"));
     return `
       <div class="card">
         ${list.length
@@ -1388,7 +1388,7 @@ const screens = {
           </div>
           <span class="pk-more">ดูรายละเอียดทั้งหมด →</span>
         </div>
-        ${planCardsHtml(PACKAGES.filter(p => !p.month2))}
+        ${planCardsHtml(PACKAGES.filter(p => !p.month2 && carrierOf(p) === netCarrierKey()))}
       </div>`;
   },
 
@@ -1402,7 +1402,7 @@ const screens = {
           <div class="code">${p.code}</div>
         </div>
         <b style="font-size:14px">ขั้นตอนการสมัคร</b>
-        <ol class="steps">${SELF_STEPS.map(s => `<li>${s}</li>`).join("")}</ol>
+        <ol class="steps">${(carrierOf(p) === "truemove H" ? SELF_STEPS : ((CONFIG.SELF_STEPS_BY || {})[carrierOf(p)] || [])).map(s => `<li>${s}</li>`).join("") || "<li>ยังไม่ได้ตั้งขั้นตอนสมัครของเครือข่ายนี้</li>"}</ol>
         <button class="btn ghost" onclick="resetTo('home')">กลับหน้าหลัก</button>
       </div>`;
   },
@@ -1553,11 +1553,19 @@ function luckyNext() {
   go("payment");
 }
 
+// แพ็กเกจที่ไม่มีค่า carrier ถือว่าเป็นของ True
+function carrierOf(p) { return p.carrier || "truemove H"; }
+function netCarrierKey() { return state.netCarrier || "truemove H"; }
+// True ต้องกรอกเบอร์กับซีเรียลซิม ส่วน AIS / dtac ข้ามไปเลือกแพ็กเกจได้เลย
+function needsSimForm() { return netCarrierKey() === "truemove H"; }
+
 function startFlow(mode) {
   state.mode = mode;
   state.serial = "";
   state.phone = "";
-  go("sim-form");
+  state.shipping = needsSimForm() ? null : { carrier: netCarrierKey() };
+  if (needsSimForm()) go("sim-form");
+  else go("packages");
 }
 
 function validSim(serial, phone) {
@@ -1755,7 +1763,7 @@ function payShopOnly(id) {
   closeShopOnly();
   state.mode = "shop";
   state.pkg = PACKAGES.find(p => p.id === id);
-  if (state.serial && state.phone) {
+  if (!needsSimForm() || (state.serial && state.phone)) {
     go("payment");
   } else {
     state.skipToPayment = true;
@@ -1878,7 +1886,7 @@ async function submitPayment() {
       serial: state.serial, phone: state.phone,
       package: state.pkg, amount, time: new Date().toISOString(),
       lineUserId: state.lineUser ? state.lineUser.userId : "",
-      shipping: state.shipping || null,
+      shipping: state.shipping || (state.netCarrier ? { carrier: state.netCarrier } : null),
       slipRef: check && check.ref ? check.ref : ""
     });
     // แจ้งไลน์ร้านเป็นเรื่องรอง ถ้าพลาดไม่ควรทำให้ลูกค้าเห็นว่าชำระไม่สำเร็จ
