@@ -499,7 +499,7 @@ function renderSideMenu() {
   const items = [
     item("closeMenu();startRegister()", menuIconHtml("register", "🗂️"), quickLabel("register", "ลงทะเบียนซิม")),
     item("closeMenu();go('net-menu')", menuIconHtml("net", "📶"), quickLabel("net", "สมัครแพ็กเกจเน็ต")),
-    item("", menuIconHtml("port", "🔄"), quickLabel("port", "สมัครโปรเบอร์เดิม") + " (เร็ว ๆ นี้)", true),
+    item("closeMenu();go('month2')", menuIconHtml("port", "🔄"), quickLabel("port", "ต่อแพ็กเกจเดือน 2")),
     item("", menuIconHtml("esim", "📱"), quickLabel("esim", "รับ E-Sim") + " (เร็ว ๆ นี้)", true)
   ];
   if (CONFIG.lineContactUrl) {
@@ -1042,8 +1042,8 @@ const screens = {
           <button class="qi" onclick="go('net-menu')">
             <div class="qi-icon">${menuIconHtml("net", "📶")}</div><b>${quickLabel("net", "สมัครแพ็กเกจเน็ต")}</b>
           </button>
-          <button class="qi disabled">
-            <div class="qi-icon">${menuIconHtml("port", "🔄")}</div><b>${quickLabel("port", "สมัครโปรเบอร์เดิม")}</b>
+          <button class="qi" onclick="go('month2')">
+            <div class="qi-icon">${menuIconHtml("port", "🔄")}</div><b>${quickLabel("port", "ต่อแพ็กเกจเดือน 2")}</b>
           </button>
           <button class="qi disabled">
             <div class="qi-icon">${menuIconHtml("esim", "📱")}</div><b>${quickLabel("esim", "รับ E-Sim")}</b>
@@ -1180,11 +1180,6 @@ const screens = {
               <b>${menuText("shopTitle")} <span class="tag green">ลด ${globalDiscountLabel()}</span></b>
               <span>${menuText("shopDesc")}</span>
             </div>
-            <div class="chev">›</div>
-          </button>
-          <button class="menu-item" onclick="go('month2')">
-            <div class="mi">📶</div>
-            <div class="mt"><b>ต่อแพ็กเกจเดือนที่ 2</b><span>สำหรับลูกค้าที่สมัครเดือนแรกแล้ว</span></div>
             <div class="chev">›</div>
           </button>
         </div>
