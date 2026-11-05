@@ -2497,7 +2497,7 @@ function stepsHtml(cur) {
     </style>
     <div style="margin:18px 0 6px;padding:18px 18px 10px;border-radius:16px;background:#f8fafc;border:1px solid #e4e7ec">
       <div id="mo-route" style="position:relative">
-        <div id="mo-light" style="position:absolute;left:14px;top:0;width:12px;height:12px;border-radius:50%;background:#fff;opacity:0;z-index:2;box-shadow:0 0 0 3px #12b76a,0 0 14px 6px rgba(18,183,106,.6)"></div>
+        <div id="mo-light" style="position:absolute;left:14px;top:0;width:12px;height:12px;border-radius:50%;background:#fff;opacity:0;z-index:0;box-shadow:0 0 0 3px #12b76a,0 0 14px 6px rgba(18,183,106,.6)"></div>
         ${rows}
       </div>
     </div>`;
@@ -2518,7 +2518,8 @@ function animateRoute(cur) {
   const from = centerOf(dots[0]);
   const idx = Math.min(Math.max(cur, 0), dots.length - 1);
   // ไฟหยุดอยู่บนเส้นทางก่อนถึงสถานีปัจจุบัน ไม่ทับไอคอนรถไฟ
-  const to = centerOf(dots[idx]) - 26;
+  // ไฟวิ่งลงไปถึงกลางสถานีปัจจุบัน แล้วหายเข้าไปในนาฬิกาทราย
+  const to = centerOf(dots[idx]);
   light.style.top = to + "px";
   light.style.opacity = idx > 0 ? "1" : "0";
   if (idx > 0 && to > from && light.animate) {
@@ -2527,7 +2528,8 @@ function animateRoute(cur) {
       [
         { top: from + "px", opacity: 0, offset: 0 },
         { top: from + "px", opacity: 1, offset: 0.08 },
-        { top: to + "px", opacity: 1, offset: 0.8 },
+        { top: to + "px", opacity: 1, offset: 0.72 },
+        { top: to + "px", opacity: 0, offset: 0.86 },
         { top: to + "px", opacity: 0, offset: 1 }
       ],
       { duration: Math.max(1600, (to - from) * 10), easing: "ease-in-out", iterations: Infinity }
