@@ -1917,11 +1917,16 @@ function selectPackage(id) {
   const p = PACKAGES.find(x => x.id === id);
   state.pkg = p;
   // แพ็กเกจที่ต้องสมัครกับทางร้านเท่านั้น: ลูกค้าเมนูเองจะเห็นป๊อปอัปแทนขั้นตอนสมัครเอง
-  if (state.mode !== "shop" && p.shopOnly) {
+  // สมัครเน็ตกับทางร้าน: แสดงขั้นตอนการสมัครก่อน แล้วกดชำระค่าแพ็กเกจ
+  if (state.mode === "shop") {
     showShopOnlyPopup(p);
     return;
   }
-  go(state.mode === "shop" ? "payment" : "self-detail");
+  if (p.shopOnly) {
+    showShopOnlyPopup(p);
+    return;
+  }
+  go("self-detail");
 }
 
 function showShopOnlyPopup(p) {
@@ -1931,8 +1936,8 @@ function showShopOnlyPopup(p) {
   el.className = "so-overlay";
   el.innerHTML = `
     <div class="so-box">
-      <h3>แพ็กเกจนี้ต้องสมัครกับทางร้านเท่านั้น</h3>
-      <p>${esc(p.name)} ไม่สามารถสมัครเองได้ กดปุ่มด้านล่างเพื่อชำระค่าแพ็กเกจเน็ต</p>
+      <h3>${esc(p.name)}</h3>
+      <p>${state.mode !== "shop" ? "ไม่สามารถสมัครเองได้ " : ""}กดปุ่มด้านล่างเพื่อชำระค่าแพ็กเกจเน็ต</p>
       <div class="so-steps">
         <b>ขั้นตอนการสมัคร</b>
         <ol>
