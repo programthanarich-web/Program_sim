@@ -2466,7 +2466,11 @@ function stepsHtml(cur) {
     const done = i < cur;
     const now = i === cur;
     const dotBg = done ? "#12b76a" : now ? "#0b5cad" : "#d0d5dd";
-    const mark = done ? "✓" : now ? "🚆" : String(i + 1);
+    const mark = done
+      ? "✓"
+      : now
+        ? `<span style="display:inline-block;animation:mo-hourglass 2.4s ease-in-out infinite">⌛</span>`
+        : String(i + 1);
     // เส้นระหว่างสถานี: ช่วงที่ผ่านแล้วเป็นไฟวิ่ง ช่วงที่ยังไม่ถึงเป็นเส้นเทา
     const line = i < n - 1
       ? `<div style="position:absolute;left:18px;top:40px;bottom:0;width:4px;border-radius:2px;${done
@@ -2488,6 +2492,7 @@ function stepsHtml(cur) {
   return `
     <style>
       @keyframes mo-flowv { to { background-position: 0 26px; } }
+      @keyframes mo-hourglass { 0%, 30% { transform: rotate(0deg); } 50%, 80% { transform: rotate(180deg); } 100% { transform: rotate(360deg); } }
       @keyframes mo-pulse { 0% { box-shadow: 0 0 0 0 rgba(11,92,173,.45); } 70% { box-shadow: 0 0 0 12px rgba(11,92,173,0); } 100% { box-shadow: 0 0 0 0 rgba(11,92,173,0); } }
     </style>
     <div style="margin:18px 0 6px;padding:18px 18px 10px;border-radius:16px;background:#f8fafc;border:1px solid #e4e7ec">
@@ -2554,7 +2559,7 @@ function showPending(orderNo, cur = 1) {
     : "";
   render(`
     <div class="card result" id="pendingBox">
-      <div class="icon">🚆</div>
+      <div class="icon" style="display:inline-block;animation:mo-hourglass 2.4s ease-in-out infinite">⌛</div>
       <h2>อยู่ระหว่างดำเนินการ</h2>
       ${orderNo ? `<p class="order-no">หมายเลขคำสั่งซื้อ <b>${orderNo}</b></p>` : ""}
       ${stepsHtml(cur)}
