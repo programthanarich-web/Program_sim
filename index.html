@@ -954,7 +954,7 @@ async function saNext() {
   try {
     const res = await fetch(API_BASE + "/port/request", {
       method: "POST",
-      body: JSON.stringify({ phone: m.phone, carrier: m.carrier, confirmImg: m.confirmUrl })
+      body: JSON.stringify({ phone: m.phone, carrier: m.carrier, confirmImg: m.confirmUrl, lineUserId: state.lineUser ? state.lineUser.userId : "" })
     });
     const d = await res.json().catch(() => ({}));
     if (!res.ok || !d.id) throw new Error(d.error || ("HTTP " + res.status));
