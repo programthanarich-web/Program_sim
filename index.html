@@ -980,6 +980,37 @@ async function saNext() {
 // ----- ตรวจสถานะเบอร์เดิมจากร้าน (OTP และแพ็กเกจที่ร้านเลือก) -----
 let portTimer = null;
 
+// ----- ตัวนับถอยหลังของ OTP (ใช้ได้ 5 นาที) -----
+const OTP_VALID_MS = 5 * 60 * 1000;
+let portCountTimer = null;
+
+function portOtpRemaining() {
+  const m = saInit();
+  const start = m.otpAt ? Date.parse(m.otpAt) : Date.now();
+  return Math.max(0, start + OTP_VALID_MS - Date.now());
+}
+
+function portFmtTime(ms) {
+  const s = Math.ceil(ms / 1000);
+  return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0");
+}
+
+function portTimerText() {
+  const left = portOtpRemaining();
+  return left > 0
+    ? "OTP ใช้ได้อีก " + portFmtTime(left)
+    : "OTP หมดอายุแล้ว กรุณารอทางร้านขอ OTP ใหม่";
+}
+
+function portCountdownTick() {
+  const el = document.getElementById("portTimer");
+  if (el) el.textContent = portTimerText();
+}
+
+function portEnsureCountdown() {
+  if (!portCountTimer) portCountTimer = setInterval(portCountdownTick, 1000);
+}
+
 function portEnsurePolling() {
   const m = saInit();
   if (!m.orderId || portTimer || m.status === "port_cancelled") return;
@@ -998,9 +1029,12 @@ async function portTick() {
     if (!res.ok) return;
     const d = await res.json();
     if (!d.status) return;
-    const changed = d.status !== m.status || JSON.stringify(d.portPackageIds || []) !== JSON.stringify(m.portPackageIds || []);
+    const changed = d.status !== m.status
+      || JSON.stringify(d.portPackageIds || []) !== JSON.stringify(m.portPackageIds || [])
+      || (d.otpAt && d.otpAt !== m.otpAt);
     m.status = d.status;
     m.portPackageIds = d.portPackageIds || [];
+    if (d.otpAt) m.otpAt = d.otpAt;
     if (d.status === "port_cancelled") portStopPolling();
     if (changed && history_[history_.length - 1] === "port-wait") render();
   } catch (e) { /* ลองใหม่รอบถัดไป */ }
@@ -1008,6 +1042,11 @@ async function portTick() {
 
 async function portSendOtp() {
   const m = saInit();
+  if (portOtpRemaining() <= 0) {
+    m.err = "OTP หมดอายุแล้ว กรุณารอทางร้านขอ OTP ใหม่";
+    render();
+    return;
+  }
   const otp = (document.getElementById("portOtp")?.value || "").trim();
   if (!/^\d{4,8}$/.test(otp)) {
     m.err = "กรุณากรอกเลข OTP ให้ถูกต้อง (ตัวเลข 4-8 หลัก)";
@@ -1615,12 +1654,14 @@ const screens = {
     hero.classList.add("hidden");
     const m = saInit();
     portEnsurePolling();
-    const cancelBtn = `<button class="btn ghost" style="margin-top:10px" onclick="portCancelRequest()">ยกเลิกการสมัครโปรเบอร์เดิม</button>`;
+    // ปุ่มยกเลิกแสดงเฉพาะตอนที่ร้านส่งแพ็กเกจให้ลูกค้าแล้ว (port_ready)
+    const cancelBtn = "";
     if (m.status === "port_cancelled") {
       return `<div class="card"><h3 style="text-align:center">ยกเลิกการสมัครโปรเบอร์เดิมแล้ว</h3>
         <button class="btn" onclick="resetTo('home')">กลับหน้าหลัก</button></div>`;
     }
     if (m.status === "port_ready") {
+      const cancelBtn = `<button class="btn ghost" style="margin-top:10px" onclick="portCancelRequest()">ยกเลิกการสมัครโปรเบอร์เดิม</button>`;
       const ids = m.portPackageIds || [];
       const list = PACKAGES.filter(p => p.simAge && ids.includes(p.id));
       return `<div class="card">
@@ -1645,9 +1686,12 @@ const screens = {
       </div>`;
     }
     const retryNote = m.status === "port_need_otp"
-      ? `<div class="err" style="display:block">OTP ไม่ถูกต้อง กรุณากรอก OTP ใหม่ที่ส่งเข้าเบอร์ของคุณ</div>`
+      ? `<div class="err" style="display:block;font-size:15px;font-weight:700;background:#fee2e2;border-radius:10px;padding:10px 12px;margin:8px 0">❌ OTP ไม่ถูกต้อง กรุณาตรวจสอบ OTP ใหม่อีกครั้ง</div>`
       : "";
     const sample0 = CONFIG.portOtpSample;
+    if (!m.otpAt) m.otpAt = new Date().toISOString();
+    portEnsureCountdown();
+    const timerLine = `<div id="portTimer" style="text-align:center;font-weight:700;color:#b45309;margin:8px 0">${portTimerText()}</div>`;
     return `<div class="card m2">
       <div class="m2-step">ขั้นตอนที่ 1</div>
       <div class="m2-title">รอรับ OTP ที่ส่งเข้าเบอร์ ${esc(m.phone)}</div>
@@ -1659,6 +1703,7 @@ const screens = {
         <div class="m2-sample-h">ตัวอย่างรูป OTP</div>
         ${sample0 ? `<img src="${sample0}" alt="ตัวอย่างรูป OTP">` : `<div class="m2-sample-empty">ยังไม่ได้ตั้งรูปตัวอย่าง OTP (ตั้งได้ที่หลังบ้าน)</div>`}
       </div>
+      ${timerLine}
       ${retryNote}
       <div class="err" style="${m.err ? "display:block" : ""}">${esc(m.err || "")}</div>
       <button class="btn m2-btn" onclick="portSendOtp()">ส่ง OTP ให้ทางร้าน</button>
