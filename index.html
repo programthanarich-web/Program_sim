@@ -891,7 +891,7 @@ function saInit() {
 
 function saReady() {
   const m = saInit();
-  return !!(m.carrier && /^0\d{8,9}$/.test(m.phone) && m.confirmUrl && m.agree);
+  return !!(m.carrier && /^0\d{8,9}$/.test(m.phone) && m.confirmUrl && m.sim1y && m.agree);
 }
 
 function saRefresh() {
@@ -942,6 +942,7 @@ function saNext() {
   if (!m.carrier) msg = "กรุณาเลือกเครือข่ายมือถือ";
   else if (!/^0\d{8,9}$/.test(m.phone)) msg = "กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง (10 หลัก)";
   else if (!m.confirmUrl) msg = "กรุณาอัปโหลดรูปแสดงอายุซิม";
+  else if (!m.sim1y) msg = "กรุณาติ๊กยืนยันว่าซิมใช้งานเกิน 1 ปีแล้ว";
   else if (!m.agree) msg = "กรุณาติ๊กยืนยันความถูกต้องก่อน";
   if (msg) {
     m.err = msg;
@@ -952,7 +953,7 @@ function saNext() {
   state.mode = "shop";
   state.serial = "";
   state.phone = m.phone;
-  state.shipping = { carrier: m.carrier, phone: m.phone, confirmImg: m.confirmUrl, simAge: true };
+  state.shipping = { carrier: m.carrier, phone: m.phone, confirmImg: m.confirmUrl, simAge: true, simOver1Year: true };
   // ใช้รายการแพ็กเกจเดิมของเครือข่ายที่เลือก
   go("sim-age-packages");
 }
@@ -1513,6 +1514,7 @@ const screens = {
             : `<div class="m2-sample-empty">ยังไม่ได้ตั้งรูปตัวอย่างของเครือข่ายนี้ (ตั้งได้ที่หลังบ้าน)</div>`}
         </div>
 
+        <label class="m2-agree"><input type="checkbox" id="saSim1y" ${m.sim1y ? "checked" : ""} onchange="saSet('sim1y', this.checked)"> ยืนยันอายุซิมเกิน 1 ปีแล้ว</label>
         <label class="m2-agree"><input type="checkbox" id="saAgree" ${m.agree ? "checked" : ""} onchange="saSet('agree', this.checked)"> ยืนยันความถูกต้อง</label>
         <div class="err" id="saErr" style="${m.err ? "display:block" : ""}">${esc(m.err || "")}</div>
         <button class="btn m2-btn ${saReady() ? "" : "is-disabled"}" id="saBtn" onclick="saNext()">เลือกแพ็กเกจเน็ต →</button>
