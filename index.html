@@ -953,7 +953,7 @@ function restoreState() {
   history_ = hist;
 }
 
-function go(screen) { highlightRegister = false; history_.push(screen); saveState(); render(); window.scrollTo(0, 0); }
+function go(screen) { highlightKey = ""; history_.push(screen); saveState(); render(); window.scrollTo(0, 0); }
 function goBack()   { if (history_.length > 1) history_.pop(); saveState(); render(); window.scrollTo(0, 0); }
 function resetTo(screen) { history_ = ["home"]; if (screen !== "home") history_.push(screen); saveState(); render(); window.scrollTo(0, 0); }
 
@@ -1298,7 +1298,7 @@ function carrierLogoBox(key) {
 }
 
 function startRegister() {
-  highlightRegister = false;
+  highlightKey = "";
   state.regCarrier = null;
   state.regStep = 1;
   state.regSerial = "";
@@ -1419,7 +1419,8 @@ function esc(s) {
   return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
-let highlightRegister = false;
+let highlightKey = ""; // ปุ่มที่กระพริบ: net | register | port
+const hlc = k => (highlightKey === k ? " qi-hl" : "");
 const screens = {
   home() {
     hero.classList.add("hidden");
@@ -1433,13 +1434,13 @@ const screens = {
         ${bannerHtml()}
 
         <div class="quick-grid">
-          <button class="qi${highlightRegister ? " qi-hl" : ""}" onclick="startRegister()" style="position:relative">
+          <button class="qi${hlc("register")}" onclick="startRegister()">
             <div class="qi-icon">${menuIconHtml("register", "🗂️")}</div><b>${quickLabel("register", "ลงทะเบียนซิม")}</b>
           </button>
-          <button class="qi" onclick="go('net-carrier')">
+          <button class="qi${hlc("net")}" onclick="go('net-carrier')">
             <div class="qi-icon">${menuIconHtml("net", "📶")}</div><b>${quickLabel("net", "สมัครแพ็กเกจเน็ต")}</b>
           </button>
-          <button class="qi" onclick="go('month2-carrier')">
+          <button class="qi${hlc("port")}" onclick="go('month2-carrier')">
             <div class="qi-icon">${menuIconHtml("port", "🔄")}</div><b>${quickLabel("port", "ต่อแพ็กเกจเดือน 2")}</b>
           </button>
           <button class="qi" onclick="go('sim-age-carrier')">
@@ -2724,18 +2725,17 @@ setInterval(() => {
   el.scrollTo({ left: next * w, behavior: "smooth" });
 }, 2000);
 
-// ลิงก์จาก Rich Menu: ?menu=signup | register | renew เปิดหน้านั้นตรง ๆ
-// ลงทะเบียนซิม: เปิดหน้าแรกแล้วให้ปุ่มลงทะเบียนซิมหมุนเป็นวงกลมให้ลูกค้ากด
-const DEEP_LINKS = { signup: "net-carrier", register: "home", renew: "month2-carrier" };
+// ลิงก์จาก Rich Menu: ?menu=signup | register | renew เปิดหน้าแรก แล้วกระพริบปุ่มที่ตรงกัน
+const DEEP_LINKS = { signup: "home", register: "home", renew: "home" };
+const DEEP_HIGHLIGHT = { signup: "net", register: "register", renew: "port" };
 function applyDeepLink() {
   let key = "";
   try { key = new URLSearchParams(location.search).get("menu") || ""; } catch (e) { key = ""; }
-  const target = DEEP_LINKS[key];
-  if (!target || !screens[target]) return false;
+  if (!DEEP_LINKS[key]) return false;
   try { history.replaceState(null, "", location.pathname); } catch (e) { /* ข้าม */ }
   clearSavedState();
-  if (key === "register") { highlightRegister = true; }
-  history_ = target === "home" ? ["home"] : ["home", target];
+  highlightKey = DEEP_HIGHLIGHT[key] || "";
+  history_ = ["home"];
   saveState();
   return true;
 }
@@ -2743,7 +2743,7 @@ function applyDeepLink() {
 loadRemoteSettings().then(() => {
   if (!applyDeepLink()) restoreState();
   render();
-  if (highlightRegister) {
+  if (highlightKey) {
     setTimeout(() => {
       const el = document.querySelector(".qi-hl");
       if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
