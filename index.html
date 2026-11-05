@@ -883,6 +883,81 @@ function m2Next() {
   go("month2-packages");
 }
 
+/* ----- เมนูโปรเน็ตเบอร์เดิม (ตรวจอายุซิม) ----- */
+function saInit() {
+  if (!state.sa) state.sa = { carrier: "", phone: "", confirmUrl: "", uploading: false, agree: false, err: "" };
+  return state.sa;
+}
+
+function saReady() {
+  const m = saInit();
+  return !!(m.carrier && /^0\d{8,9}$/.test(m.phone) && m.confirmUrl && m.agree);
+}
+
+function saRefresh() {
+  const b = document.getElementById("saBtn");
+  if (b) b.classList.toggle("is-disabled", !saReady());
+}
+
+function saSet(key, value) {
+  saInit()[key] = value;
+  if (key === "phone") saInit().err = "";
+  saRefresh();
+}
+
+function saPickCarrier(key) {
+  const m = saInit();
+  if (m.carrier !== key) { m.confirmUrl = ""; m.agree = false; }
+  m.carrier = key;
+  m.err = "";
+  go("sim-age");
+}
+
+async function saUpload(input) {
+  const f = input.files && input.files[0];
+  if (!f) return;
+  const m = saInit();
+  m.uploading = true;
+  m.err = "";
+  render();
+  try {
+    const img = await normalizeSlipImage(f);
+    const fd = new FormData();
+    fd.append("file", img, "sim-age.jpg");
+    const res = await fetch(API_BASE + "/upload-confirm", { method: "POST", body: fd });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok || !d.url) throw new Error(d.error || "upload failed");
+    m.confirmUrl = d.url;
+  } catch (e) {
+    m.confirmUrl = "";
+    m.err = "อัปโหลดรูปไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
+  }
+  m.uploading = false;
+  render();
+}
+
+function saNext() {
+  const m = saInit();
+  let msg = "";
+  if (!m.carrier) msg = "กรุณาเลือกเครือข่ายมือถือ";
+  else if (!/^0\d{8,9}$/.test(m.phone)) msg = "กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง (10 หลัก)";
+  else if (!m.confirmUrl) msg = "กรุณาอัปโหลดรูปแสดงอายุซิม";
+  else if (!m.agree) msg = "กรุณาติ๊กยืนยันความถูกต้องก่อน";
+  if (msg) {
+    m.err = msg;
+    render();
+    return;
+  }
+  m.err = "";
+  state.mode = "shop";
+  state.serial = "";
+  state.phone = m.phone;
+  state.shipping = { carrier: m.carrier, phone: m.phone, confirmImg: m.confirmUrl, simAge: true };
+  // ใช้รายการแพ็กเกจเดิมของเครือข่ายที่เลือก
+  state.m2 = { ...(state.m2 || {}), carrier: m.carrier };
+  go("month2-packages");
+}
+
 /* ----- ลงทะเบียนซิม ----- */
 const SIM_CARRIERS = [
   { key: "truemove H", label: "ลงทะเบียนซิมทรู", desc: "ซิมทรูมูฟ เอช" },
@@ -1060,7 +1135,7 @@ const screens = {
           <button class="qi" onclick="go('month2-carrier')">
             <div class="qi-icon">${menuIconHtml("port", "🔄")}</div><b>${quickLabel("port", "ต่อแพ็กเกจเดือน 2")}</b>
           </button>
-          <button class="qi disabled">
+          <button class="qi" onclick="go('sim-age-carrier')">
             <div class="qi-icon">${menuIconHtml("esim", "📱")}</div><b>${quickLabel("esim", "รับ E-Sim")}</b>
           </button>
         </div>
@@ -1393,6 +1468,55 @@ const screens = {
         <label class="m2-agree"><input type="checkbox" id="m2Agree" ${m.agree ? "checked" : ""} onchange="m2Set('agree', this.checked)"> ยืนยันความถูกต้อง</label>
         <div class="err" id="m2Err" style="${m.err ? "display:block" : ""}">${esc(m.err || "")}</div>
         <button class="btn m2-btn ${m2Ready() ? "" : "is-disabled"}" id="m2Btn" onclick="m2Next()">เลือกแพ็กเกจเน็ต →</button>
+        <button class="btn ghost" style="margin-top:10px" onclick="goBack()">ย้อนกลับ</button>
+      </div>`;
+  },
+
+  // เมนูโปรเน็ตเบอร์เดิม: เลือกเครือข่ายก่อน (เปิด/ปิดรายเครือข่ายได้ที่หลังบ้าน)
+  "sim-age-carrier"() {
+    hero.classList.add("hidden");
+    return `
+      <div class="card">
+        <label class="carrier-title">เลือกเครือข่ายมือถือที่ต้องการตรวจสอบอายุซิม <span class="req">*</span></label>
+        <div class="carrier-list">
+          ${SIM_CARRIERS.map(c => {
+            const url = (CONFIG.carrierLogos || {})[c.key];
+            const on = (CONFIG.simAgeCarriers || {})[c.key] !== false;
+            return `
+            <button class="carrier-btn ${on ? "" : "is-off"}" ${on ? `onclick="saPickCarrier('${c.key}')"` : "disabled"} aria-label="${c.key}">
+              ${url ? `<img src="${url}" alt="${c.key}">` : `<b>${c.key}</b>`}
+            </button>`;
+          }).join("")}
+        </div>
+        <button class="btn ghost" style="margin-top:14px" onclick="goBack()">ย้อนกลับ</button>
+      </div>`;
+  },
+
+  // กรอกเบอร์ อัปโหลดรูปแสดงอายุซิม ติ๊กยืนยัน แล้วเลือกแพ็กเกจ
+  "sim-age"() {
+    hero.classList.add("hidden");
+    const m = saInit();
+    return `
+      <div class="card m2">
+        <div class="m2-step">ขั้นตอนที่ 1</div>
+        <label class="m2-title" for="saPhone">กรอกเบอร์โทรศัพท์ <span class="req">*</span></label>
+        <input id="saPhone" class="m2-input" type="tel" inputmode="numeric" maxlength="10" placeholder="กรอกเบอร์โทรศัพท์" value="${esc(m.phone)}" oninput="saSet('phone', this.value)">
+
+        <div class="m2-step">ขั้นตอนที่ 2</div>
+        <div class="m2-title">อัปโหลดรูปแสดงอายุซิม <span class="req">*</span></div>
+        <label class="m2-upload" for="saFile">${m.confirmUrl ? "✅ อัปโหลดรูปแล้ว (กดเพื่อเปลี่ยน)" : m.uploading ? "กำลังอัปโหลด..." : "🖼️ อัปโหลดรูปภาพ"}</label>
+        <input type="file" id="saFile" accept="image/*" class="sr-only" onchange="saUpload(this)">
+
+        <div class="m2-sample">
+          <div class="m2-sample-h">ตัวอย่างรูปภาพ</div>
+          ${((CONFIG.simAgeSamples || {})[m.carrier])
+            ? `<img src="${(CONFIG.simAgeSamples || {})[m.carrier]}" alt="ตัวอย่างรูปแสดงอายุซิม">`
+            : `<div class="m2-sample-empty">ยังไม่ได้ตั้งรูปตัวอย่างของเครือข่ายนี้ (ตั้งได้ที่หลังบ้าน)</div>`}
+        </div>
+
+        <label class="m2-agree"><input type="checkbox" id="saAgree" ${m.agree ? "checked" : ""} onchange="saSet('agree', this.checked)"> ยืนยันความถูกต้อง</label>
+        <div class="err" id="saErr" style="${m.err ? "display:block" : ""}">${esc(m.err || "")}</div>
+        <button class="btn m2-btn ${saReady() ? "" : "is-disabled"}" id="saBtn" onclick="saNext()">เลือกแพ็กเกจเน็ต →</button>
         <button class="btn ghost" style="margin-top:10px" onclick="goBack()">ย้อนกลับ</button>
       </div>`;
   },
