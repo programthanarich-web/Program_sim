@@ -954,7 +954,6 @@ async function saNext() {
   try {
     const res = await fetch(API_BASE + "/port/request", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ phone: m.phone, carrier: m.carrier, confirmImg: m.confirmUrl })
     });
     const d = await res.json().catch(() => ({}));
@@ -1017,7 +1016,6 @@ async function portSendOtp() {
   try {
     const res = await fetch(API_BASE + "/port/otp", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: m.orderId, otp })
     });
     const d = await res.json().catch(() => ({}));
@@ -1036,7 +1034,6 @@ async function portCancelRequest() {
   try {
     const res = await fetch(API_BASE + "/port/cancel", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: m.orderId })
     });
     if (!res.ok) throw new Error("fail");
