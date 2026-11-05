@@ -954,8 +954,7 @@ function saNext() {
   state.phone = m.phone;
   state.shipping = { carrier: m.carrier, phone: m.phone, confirmImg: m.confirmUrl, simAge: true };
   // ใช้รายการแพ็กเกจเดิมของเครือข่ายที่เลือก
-  state.m2 = { ...(state.m2 || {}), carrier: m.carrier };
-  go("month2-packages");
+  go("sim-age-packages");
 }
 
 /* ----- ลงทะเบียนซิม ----- */
@@ -1521,6 +1520,20 @@ const screens = {
       </div>`;
   },
 
+  // เมนูโปรเน็ตเบอร์เดิม: แสดงเฉพาะแพ็กเกจที่ตั้งไว้ในกลุ่มโปรเบอร์เดิม ของเครือข่ายที่เลือก
+  "sim-age-packages"() {
+    hero.classList.add("hidden");
+    const car = state.sa && state.sa.carrier ? state.sa.carrier : "truemove H";
+    const list = PACKAGES.filter(p => p.simAge && carrierOf(p) === car);
+    return `
+      <div class="card">
+        ${list.length
+          ? planCardsHtml(list)
+          : `<p class="hint" style="text-align:center;padding:20px 0">ยังไม่มีแพ็กเกจในขณะนี้ กรุณาติดต่อร้าน</p>`}
+        <button class="btn ghost" style="margin-top:12px" onclick="goBack()">ย้อนกลับ</button>
+      </div>`;
+  },
+
   "month2-packages"() {
     hero.classList.add("hidden");
     const list = PACKAGES.filter(p => p.month2 && carrierOf(p) === (state.m2 && state.m2.carrier ? state.m2.carrier : "truemove H"));
@@ -1547,7 +1560,7 @@ const screens = {
           </div>
           <span class="pk-more">ดูรายละเอียดทั้งหมด →</span>
         </div>
-        ${planCardsHtml(PACKAGES.filter(p => !p.month2 && carrierOf(p) === netCarrierKey() && (state.mode !== "shop" || p.shopVisible)))}
+        ${planCardsHtml(PACKAGES.filter(p => !p.month2 && !p.simAge && carrierOf(p) === netCarrierKey() && (state.mode !== "shop" || p.shopVisible)))}
       </div>`;
   },
 
