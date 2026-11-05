@@ -953,7 +953,7 @@ function restoreState() {
   history_ = hist;
 }
 
-function go(screen) { history_.push(screen); saveState(); render(); window.scrollTo(0, 0); }
+function go(screen) { highlightRegister = false; history_.push(screen); saveState(); render(); window.scrollTo(0, 0); }
 function goBack()   { if (history_.length > 1) history_.pop(); saveState(); render(); window.scrollTo(0, 0); }
 function resetTo(screen) { history_ = ["home"]; if (screen !== "home") history_.push(screen); saveState(); render(); window.scrollTo(0, 0); }
 
@@ -1298,6 +1298,7 @@ function carrierLogoBox(key) {
 }
 
 function startRegister() {
+  highlightRegister = false;
   state.regCarrier = null;
   state.regStep = 1;
   state.regSerial = "";
@@ -1418,16 +1419,27 @@ function esc(s) {
   return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
+let highlightRegister = false;
 const screens = {
   home() {
     hero.classList.add("hidden");
     setTimeout(refreshMyOrders, 0);
     return `
+      <style>
+        @keyframes qi-spin { to { transform: rotate(360deg); } }
+        .qi-ring { position:absolute; inset:-6px; border-radius:20px; border:3px solid transparent;
+          border-top-color:#0b5cad; border-right-color:rgba(11,92,173,.35);
+          animation: qi-spin 1s linear infinite; pointer-events:none; }
+        .qi-hint { background:#0b5cad; color:#fff; border-radius:12px; padding:10px 14px;
+          font-size:15px; font-weight:700; text-align:center; margin:0 0 12px; }
+      </style>
       <div class="card">
         ${bannerHtml()}
+        ${highlightRegister ? `<div class="qi-hint">กดปุ่ม "ลงทะเบียนซิม" เพื่อเริ่มต้น</div>` : ""}
 
         <div class="quick-grid">
-          <button class="qi" onclick="startRegister()">
+          <button class="qi" onclick="startRegister()" style="position:relative">
+            ${highlightRegister ? `<span class="qi-ring"></span>` : ""}
             <div class="qi-icon">${menuIconHtml("register", "🗂️")}</div><b>${quickLabel("register", "ลงทะเบียนซิม")}</b>
           </button>
           <button class="qi" onclick="go('net-carrier')">
@@ -2719,7 +2731,8 @@ setInterval(() => {
 }, 2000);
 
 // ลิงก์จาก Rich Menu: ?menu=signup | register | renew เปิดหน้านั้นตรง ๆ
-const DEEP_LINKS = { signup: "net-carrier", register: "sim-carrier", renew: "month2-carrier" };
+// ลงทะเบียนซิม: เปิดหน้าแรกแล้วให้ปุ่มลงทะเบียนซิมหมุนเป็นวงกลมให้ลูกค้ากด
+const DEEP_LINKS = { signup: "net-carrier", register: "home", renew: "month2-carrier" };
 function applyDeepLink() {
   let key = "";
   try { key = new URLSearchParams(location.search).get("menu") || ""; } catch (e) { key = ""; }
@@ -2727,13 +2740,23 @@ function applyDeepLink() {
   if (!target || !screens[target]) return false;
   try { history.replaceState(null, "", location.pathname); } catch (e) { /* ข้าม */ }
   clearSavedState();
-  if (key === "register") { state.regCarrier = null; state.regStep = 1; state.regSerial = ""; }
-  history_ = ["home", target];
+  if (key === "register") { highlightRegister = true; }
+  history_ = target === "home" ? ["home"] : ["home", target];
   saveState();
   return true;
 }
 
-loadRemoteSettings().then(() => { if (!applyDeepLink()) restoreState(); render(); initLiff(); resumeOrderWatch(); });
+loadRemoteSettings().then(() => {
+  if (!applyDeepLink()) restoreState();
+  render();
+  if (highlightRegister) {
+    setTimeout(() => {
+      const el = document.querySelector(".qi-ring");
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 300);
+  }
+  initLiff(); resumeOrderWatch();
+});
 </script>
 </body>
 </html>
