@@ -958,14 +958,14 @@ async function saNext() {
       body: JSON.stringify({ phone: m.phone, carrier: m.carrier, confirmImg: m.confirmUrl })
     });
     const d = await res.json().catch(() => ({}));
-    if (!res.ok || !d.id) throw new Error(d.error || "fail");
+    if (!res.ok || !d.id) throw new Error(d.error || ("HTTP " + res.status));
     m.orderId = d.id;
     m.orderNo = d.orderNo || "";
     m.status = "port_wait";
     m.portPackageId = "";
   } catch (e) {
     m.submitting = false;
-    m.err = "ส่งข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
+    m.err = "ส่งข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง (" + (e && e.message ? e.message : "error") + ")";
     render();
     return;
   }
