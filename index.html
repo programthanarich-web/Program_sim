@@ -2471,7 +2471,7 @@ function stepsHtml(cur) {
     const line = i < n - 1
       ? `<div style="position:absolute;left:18px;top:40px;bottom:0;width:4px;border-radius:2px;${done
           ? "background:linear-gradient(180deg,#12b76a,#8ff0bb,#12b76a);background-size:4px 26px;animation:mo-flowv .7s linear infinite"
-          : "background:#d0d5dd"}"></div>`
+          : "background:repeating-linear-gradient(180deg,#d0d5dd 0 10px,#eef0f3 10px 26px);background-size:4px 26px;animation:mo-flowv 1.4s linear infinite"}"></div>`
       : "";
     const status = done ? "ผ่านแล้ว" : now ? "กำลังดำเนินการอยู่ตอนนี้" : "ยังไม่ถึง";
     const pulse = now ? "animation:mo-pulse 1.6s ease-out infinite;" : "";
@@ -2517,9 +2517,15 @@ function animateRoute(cur) {
   light.style.top = to + "px";
   light.style.opacity = idx > 0 ? "1" : "0";
   if (idx > 0 && to > from && light.animate) {
+    // ไฟวิ่งจากสถานีที่ 1 ถึงสถานีปัจจุบัน แล้วจางและวนกลับมาเริ่มใหม่ตลอดเวลา
     light.animate(
-      [{ top: from + "px" }, { top: to + "px" }],
-      { duration: Math.max(900, (to - from) * 6), easing: "ease-in-out", fill: "backwards" }
+      [
+        { top: from + "px", opacity: 0, offset: 0 },
+        { top: from + "px", opacity: 1, offset: 0.08 },
+        { top: to + "px", opacity: 1, offset: 0.8 },
+        { top: to + "px", opacity: 0, offset: 1 }
+      ],
+      { duration: Math.max(1600, (to - from) * 10), easing: "ease-in-out", iterations: Infinity }
     );
   }
 }
