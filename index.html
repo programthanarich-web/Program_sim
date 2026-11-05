@@ -2452,12 +2452,93 @@ const ORDER_STEPS = [
 // new = รอร้านตรวจ (ขั้นที่ 1), confirmed = ร้านยืนยันแล้ว (ขั้นที่ 2)
 const ORDER_STEP_OF = { new: 1, confirmed: 2 };
 
+// เส้นทางแบบสถานีรถไฟ (แนวตั้ง): ผ่านแล้วเป็นสีเขียว สถานีปัจจุบันมีรถไฟและเน้นสี
+// เปอร์เซ็นต์ความคืบหน้าของคำสั่งซื้อ (ขั้นที่ 1 จาก 4 = 0%, ขั้นสุดท้าย = 100%)
+function orderProgressPct(cur) {
+  return Math.round(Math.max(0, Math.min(cur, ORDER_STEPS.length - 1)) / (ORDER_STEPS.length - 1) * 100);
+}
+
+// เส้นทางแบบสถานีรถไฟ + แถบพลังงานที่ไหลตามความคืบหน้า (ขั้นตอนที่ผ่านแล้วมีไฟวิ่งอยู่)
 function stepsHtml(cur) {
-  return `<div class="ostep-list">${ORDER_STEPS.map((s, i) => {
-    const cls = i < cur ? "ok" : i === cur ? "now" : "todo";
-    const mark = i < cur ? "✓" : i === cur ? "…" : String(i + 1);
-    return `<div class="ostep ${cls}"><span class="ostep-dot">${mark}</span><span>${s.label}</span></div>`;
-  }).join("")}</div>`;
+  const n = ORDER_STEPS.length;
+  const pct = orderProgressPct(cur);
+  const rows = ORDER_STEPS.map((s, i) => {
+    const done = i < cur;
+    const now = i === cur;
+    const dotBg = done ? "#12b76a" : now ? "#0b5cad" : "#d0d5dd";
+    const mark = done ? "✓" : now ? "🚆" : String(i + 1);
+    // เส้นระหว่างสถานี: ช่วงที่ผ่านแล้วเป็นไฟวิ่ง ช่วงที่ยังไม่ถึงเป็นเส้นเทา
+    const line = i < n - 1
+      ? `<div style="position:absolute;left:18px;top:40px;bottom:0;width:4px;border-radius:2px;${done
+          ? "background:linear-gradient(180deg,#12b76a,#8ff0bb,#12b76a);background-size:4px 26px;animation:mo-flowv .7s linear infinite"
+          : "background:#d0d5dd"}"></div>`
+      : "";
+    const status = done ? "ผ่านแล้ว" : now ? "กำลังดำเนินการอยู่ตอนนี้" : "ยังไม่ถึง";
+    const pulse = now ? "animation:mo-pulse 1.6s ease-out infinite;" : "";
+    return `
+      <div style="position:relative;display:flex;gap:14px;align-items:flex-start;padding-bottom:${i < n - 1 ? 20 : 0}px">
+        <div class="mo-dot" style="position:relative;z-index:1;flex:0 0 40px;width:40px;height:40px;border-radius:50%;background:${dotBg};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:${now ? 18 : 15}px;${pulse}">${mark}</div>
+        ${line}
+        <div style="padding-top:8px;text-align:left">
+          <div style="font-size:16px;line-height:1.35;font-weight:${now ? 800 : 600};color:${now ? "#101828" : done ? "#067647" : "#98a2b3"}">${s.label}</div>
+          <div style="font-size:13px;color:#667085;margin-top:2px">${status}</div>
+        </div>
+      </div>`;
+  }).join("");
+  return `
+    <style>
+      @keyframes mo-flowv { to { background-position: 0 26px; } }
+      @keyframes mo-pulse { 0% { box-shadow: 0 0 0 0 rgba(11,92,173,.45); } 70% { box-shadow: 0 0 0 12px rgba(11,92,173,0); } 100% { box-shadow: 0 0 0 0 rgba(11,92,173,0); } }
+    </style>
+    <div style="margin:18px 0 6px;padding:18px 18px 10px;border-radius:16px;background:#f8fafc;border:1px solid #e4e7ec">
+      <div id="mo-route" style="position:relative">
+        <div id="mo-light" style="position:absolute;left:14px;top:0;width:12px;height:12px;border-radius:50%;background:#fff;opacity:0;z-index:2;box-shadow:0 0 0 3px #12b76a,0 0 14px 6px rgba(18,183,106,.6)"></div>
+        ${rows}
+      </div>
+    </div>`;
+}
+
+// ไฟเดินทางจากสถานีที่ 1 ไปถึงสถานีปัจจุบัน แล้วค้างที่สถานีนั้น
+function animateRoute(cur) {
+  const route = document.getElementById("mo-route");
+  const light = document.getElementById("mo-light");
+  if (!route || !light) return;
+  const dots = route.querySelectorAll(".mo-dot");
+  if (!dots.length) return;
+  const base = route.getBoundingClientRect().top;
+  const centerOf = el => {
+    const r = el.getBoundingClientRect();
+    return r.top - base + r.height / 2 - 6; // 6 = ครึ่งหนึ่งของไฟ
+  };
+  const from = centerOf(dots[0]);
+  const idx = Math.min(Math.max(cur, 0), dots.length - 1);
+  // ไฟหยุดอยู่บนเส้นทางก่อนถึงสถานีปัจจุบัน ไม่ทับไอคอนรถไฟ
+  const to = centerOf(dots[idx]) - 26;
+  light.style.top = to + "px";
+  light.style.opacity = idx > 0 ? "1" : "0";
+  if (idx > 0 && to > from && light.animate) {
+    light.animate(
+      [{ top: from + "px" }, { top: to + "px" }],
+      { duration: Math.max(900, (to - from) * 6), easing: "ease-in-out", fill: "backwards" }
+    );
+  }
+}
+
+// ทำให้เปอร์เซ็นต์นับขึ้นและแถบวิ่งไปถึงค่าปัจจุบัน
+function animatePendingMeter(pct) {
+  const bar = document.getElementById("mo-bar");
+  const label = document.getElementById("mo-pct");
+  if (!bar || !label) return;
+  requestAnimationFrame(() => { bar.style.width = pct + "%"; });
+  const start = performance.now();
+  const dur = 1400;
+  const tick = now => {
+    if (document.getElementById("mo-pct") !== label) return; // หน้าเปลี่ยนไปแล้ว
+    const t = Math.min(1, (now - start) / dur);
+    label.textContent = Math.round(pct * t) + "%";
+    if (t < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
 }
 
 function showPending(orderNo, cur = 1) {
@@ -2467,15 +2548,16 @@ function showPending(orderNo, cur = 1) {
     : "";
   render(`
     <div class="card result" id="pendingBox">
-      <div class="icon">⏳</div>
+      <div class="icon">🚆</div>
       <h2>อยู่ระหว่างดำเนินการ</h2>
       ${orderNo ? `<p class="order-no">หมายเลขคำสั่งซื้อ <b>${orderNo}</b></p>` : ""}
       ${stepsHtml(cur)}
-      <p class="next-step">ขั้นตอนต่อไป: ทางร้านจะตรวจสอบและสมัครเน็ตให้ ไม่ต้องทำอะไรเพิ่ม หน้านี้จะอัปเดตเองเมื่อมีความคืบหน้า</p>
+      <p class="next-step">📍 ตอนนี้: <b>${ORDER_STEPS[cur].label}</b><br>ถัดไป: ${ORDER_STEPS[Math.min(cur + 1, ORDER_STEPS.length - 1)].label} · ไม่ต้องทำอะไรเพิ่ม หน้านี้จะอัปเดตเอง</p>
       <p class="next-hint">หากปิดหน้านี้ไปแล้ว ให้เปิดเว็บเดิมอีกครั้ง หรือแจ้งหมายเลขคำสั่งซื้อให้ร้านทาง LINE</p>
       ${contact}
       <button class="btn ghost" style="margin-top:10px" onclick="resetTo('home')">กลับหน้าหลัก</button>
     </div>`);
+  animateRoute(cur);
 }
 
 function saveOrder(order) {
