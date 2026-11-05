@@ -2453,6 +2453,19 @@ const ORDER_STEPS = [
 const ORDER_STEP_OF = { new: 1, confirmed: 2 };
 
 // เส้นทางแบบสถานีรถไฟ (แนวตั้ง): ผ่านแล้วเป็นสีเขียว สถานีปัจจุบันมีรถไฟและเน้นสี
+// นาฬิกาทรายแบบ SVG: ทรายไหลผ่านคอแก้วลงมาเรื่อย ๆ และหมุนพลิกตลอดเวลา
+function hourglassSvg(size, color = "#ffffff") {
+  return `<svg width="${size}" height="${Math.round(size * 1.25)}" viewBox="0 0 24 30" aria-hidden="true" style="display:block;margin:0 auto;overflow:visible;animation:mo-hourglass 2.4s ease-in-out infinite">
+    <rect x="2" y="1" width="20" height="2.4" rx="1" fill="${color}" opacity=".9"/>
+    <rect x="2" y="26.6" width="20" height="2.4" rx="1" fill="${color}" opacity=".9"/>
+    <path d="M5 3.4 H19 C19 10 13 13 13 15 C13 17 19 20 19 26.6 H5 C5 20 11 17 11 15 C11 13 5 10 5 3.4 Z" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M7.4 4.6 H16.6 C16.6 8 13.8 10.2 12 12.4 C10.2 10.2 7.4 8 7.4 4.6 Z" fill="#ffd166"/>
+    <path d="M6.6 25.4 C6.6 21.8 9.8 19.6 12 17.4 C14.2 19.6 17.4 21.8 17.4 25.4 Z" fill="#ffd166"/>
+    <rect x="11.5" y="12.4" width="1" height="5" rx=".5" fill="#ffd166" style="animation:mo-drip 1.2s linear infinite"/>
+    <rect x="11.5" y="12.4" width="1" height="5" rx=".5" fill="#ffd166" style="animation:mo-drip 1.2s linear -0.6s infinite"/>
+  </svg>`;
+}
+
 // เปอร์เซ็นต์ความคืบหน้าของคำสั่งซื้อ (ขั้นที่ 1 จาก 4 = 0%, ขั้นสุดท้าย = 100%)
 function orderProgressPct(cur) {
   return Math.round(Math.max(0, Math.min(cur, ORDER_STEPS.length - 1)) / (ORDER_STEPS.length - 1) * 100);
@@ -2469,7 +2482,7 @@ function stepsHtml(cur) {
     const mark = done
       ? "✓"
       : now
-        ? `<span style="display:inline-block;animation:mo-hourglass 2.4s ease-in-out infinite">⌛</span>`
+        ? hourglassSvg(20)
         : String(i + 1);
     // เส้นระหว่างสถานี: ช่วงที่ผ่านแล้วเป็นไฟวิ่ง ช่วงที่ยังไม่ถึงเป็นเส้นเทา
     const line = i < n - 1
@@ -2493,11 +2506,14 @@ function stepsHtml(cur) {
     <style>
       @keyframes mo-flowv { to { background-position: 0 26px; } }
       @keyframes mo-hourglass { 0%, 30% { transform: rotate(0deg); } 50%, 80% { transform: rotate(180deg); } 100% { transform: rotate(360deg); } }
+      @keyframes mo-drip { 0% { transform: translateY(-4px); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translateY(9px); opacity: 0; } }
       @keyframes mo-pulse { 0% { box-shadow: 0 0 0 0 rgba(11,92,173,.45); } 70% { box-shadow: 0 0 0 12px rgba(11,92,173,0); } 100% { box-shadow: 0 0 0 0 rgba(11,92,173,0); } }
     </style>
     <div style="margin:18px 0 6px;padding:18px 18px 10px;border-radius:16px;background:#f8fafc;border:1px solid #e4e7ec">
       <div id="mo-route" style="position:relative">
-        <div id="mo-light" style="position:absolute;left:14px;top:0;width:12px;height:12px;border-radius:50%;background:#fff;opacity:0;z-index:0;box-shadow:0 0 0 3px #12b76a,0 0 14px 6px rgba(18,183,106,.6)"></div>
+        <div id="mo-light" style="position:absolute;left:13px;top:0;width:14px;height:14px;opacity:0;z-index:1;filter:drop-shadow(0 0 3px rgba(18,183,106,.9))">
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 13 L12.5 6.5 H9 V1 H5 V6.5 H1.5 Z" fill="#12b76a" stroke="#ffffff" stroke-width="1.2" stroke-linejoin="round"/></svg>
+        </div>
         ${rows}
       </div>
     </div>`;
@@ -2513,7 +2529,7 @@ function animateRoute(cur) {
   const base = route.getBoundingClientRect().top;
   const centerOf = el => {
     const r = el.getBoundingClientRect();
-    return r.top - base + r.height / 2 - 6; // 6 = ครึ่งหนึ่งของไฟ
+    return r.top - base + r.height / 2 - 7; // 7 = ครึ่งหนึ่งของลูกศร
   };
   const from = centerOf(dots[0]);
   const idx = Math.min(Math.max(cur, 0), dots.length - 1);
@@ -2561,7 +2577,7 @@ function showPending(orderNo, cur = 1) {
     : "";
   render(`
     <div class="card result" id="pendingBox">
-      <div class="icon" style="display:inline-block;animation:mo-hourglass 2.4s ease-in-out infinite">⌛</div>
+      <div class="icon" style="display:flex;justify-content:center">${hourglassSvg(72, "#0b5cad")}</div>
       <h2>อยู่ระหว่างดำเนินการ</h2>
       ${orderNo ? `<p class="order-no">หมายเลขคำสั่งซื้อ <b>${orderNo}</b></p>` : ""}
       ${stepsHtml(cur)}
