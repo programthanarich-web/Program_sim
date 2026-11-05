@@ -2718,7 +2718,22 @@ setInterval(() => {
   el.scrollTo({ left: next * w, behavior: "smooth" });
 }, 2000);
 
-loadRemoteSettings().then(() => { restoreState(); render(); initLiff(); resumeOrderWatch(); });
+// ลิงก์จาก Rich Menu: ?menu=signup | register | renew เปิดหน้านั้นตรง ๆ
+const DEEP_LINKS = { signup: "net-carrier", register: "sim-carrier", renew: "month2-carrier" };
+function applyDeepLink() {
+  let key = "";
+  try { key = new URLSearchParams(location.search).get("menu") || ""; } catch (e) { key = ""; }
+  const target = DEEP_LINKS[key];
+  if (!target || !screens[target]) return false;
+  try { history.replaceState(null, "", location.pathname); } catch (e) { /* ข้าม */ }
+  clearSavedState();
+  if (key === "register") { state.regCarrier = null; state.regStep = 1; state.regSerial = ""; }
+  history_ = ["home", target];
+  saveState();
+  return true;
+}
+
+loadRemoteSettings().then(() => { if (!applyDeepLink()) restoreState(); render(); initLiff(); resumeOrderWatch(); });
 </script>
 </body>
 </html>
