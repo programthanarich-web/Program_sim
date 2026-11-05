@@ -1224,6 +1224,8 @@ async function verifySlip(file) {
   const fd = new FormData();
   fd.append("slip", img, img.name || "slip.jpg");
   fd.append("packageId", state.pkg ? state.pkg.id : "");
+  fd.append("phone", state.phone || "");
+  fd.append("couponCode", state.mode === "shop" && state.coupon ? state.coupon.code : "");
   // ไม่ให้รอนานเกินไป: เกิน 30 วินาทีให้แจ้งลูกค้าลองใหม่
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 30000);
@@ -1819,16 +1821,19 @@ const screens = {
     const base = firstPriceOf(p);
     const hasFirst = base !== p.price;
     const info = shopDiscountInfo(p);
-    const net = base - info.amount;
+    const cpOff = state.mode === "shop" && state.coupon ? Number(state.coupon.couponValue) || 0 : 0;
+    const net = base - info.amount - cpOff;
     return `
       <div class="card">
         <div class="info">
           <div><span>แพ็กเกจ</span><b>${p.name}</b></div>
           <div><span>${hasFirst ? "ราคาเดือนแรก" : "ราคาปกติ"}</span><span>${base} บาท</span></div>
           <div><span>ส่วนลดร้าน</span><span>- ${info.amount} บาท</span></div>
+          ${cpOff ? `<div><span>คูปองส่วนลด</span><span>- ${cpOff} บาท</span></div>` : ""}
           ${hasFirst ? `<div><span>หลังจากนี้ ต่อเดือน</span><span>${p.price} บาท</span></div>` : ""}
           <div class="total"><span>ยอดชำระ</span><span>${net} บาท</span></div>
         </div>
+        ${state.mode === "shop" ? couponBoxHtml() : ""}
         <div class="qr">${CONFIG.QR_IMAGE_URL
           ? `<img src="${CONFIG.QR_IMAGE_URL}" alt="QR พร้อมเพย์">`
           : `<div class="qr-empty">QR พร้อมเพย์</div>`}</div>
@@ -2148,6 +2153,7 @@ async function submitSim() {
 function selectPackage(id) {
   const p = PACKAGES.find(x => x.id === id);
   state.pkg = p;
+  state.coupon = null;
   // แพ็กเกจที่ต้องสมัครกับทางร้านเท่านั้น: ลูกค้าเมนูเองจะเห็นป๊อปอัปแทนขั้นตอนสมัครเอง
   // สมัครเน็ตกับทางร้าน: แสดงขั้นตอนการสมัครก่อน แล้วกดชำระค่าแพ็กเกจ
   if (state.mode === "shop") {
@@ -2193,6 +2199,7 @@ function payShopOnly(id) {
   closeShopOnly();
   state.mode = "shop";
   state.pkg = PACKAGES.find(p => p.id === id);
+  state.coupon = null;
   const ready = needsSimForm() ? (state.serial && state.phone) : state.phone;
   if (ready) {
     go("payment");
@@ -2200,6 +2207,62 @@ function payShopOnly(id) {
     state.skipToPayment = true;
     go(needsSimForm() ? "sim-form" : "net-phone");
   }
+}
+
+/* ----- คูปองส่วนลด (เฉพาะการสมัครเน็ตกับทางร้าน) ----- */
+function couponBoxHtml() {
+  if (state.coupon) {
+    return `<div style="margin:12px 0;padding:12px;border-radius:12px;background:#ecfdf3;color:#067647;font-size:15px">
+      🎟️ ใช้คูปอง <b>${esc(state.coupon.code)}</b> ลด ${esc(state.coupon.couponValue)} บาท
+      <div><button type="button" onclick="clearCoupon()" style="margin-top:6px;background:none;border:0;color:#b42318;text-decoration:underline;padding:0;font-size:14px">ยกเลิกคูปอง</button></div>
+    </div>`;
+  }
+  return `<div style="margin:12px 0;padding:12px;border:1px dashed #cbd5e1;border-radius:12px">
+    <label class="field-label" for="couponInput">🎟️ มีรหัสคูปองส่วนลด?</label>
+    <div style="display:flex;gap:8px;align-items:center">
+      <input id="couponInput" type="text" placeholder="กรอกรหัสคูปอง" autocomplete="off" autocapitalize="characters"
+             style="flex:1;min-width:0;padding:10px;border:1px solid #cbd5e1;border-radius:10px;font-size:16px;text-transform:uppercase">
+      <button type="button" id="couponBtn" class="btn" onclick="applyCoupon()" style="width:auto;margin:0;padding:10px 14px">ตรวจรหัส</button>
+    </div>
+    <div class="err" id="couponErr" style="display:none"></div>
+  </div>`;
+}
+
+async function applyCoupon() {
+  const input = document.getElementById("couponInput");
+  const err = document.getElementById("couponErr");
+  const btn = document.getElementById("couponBtn");
+  const code = input ? input.value.trim() : "";
+  const showErr = msg => { if (err) { err.textContent = msg; err.style.display = "block"; } };
+  if (!code) { showErr("กรุณากรอกรหัสคูปอง"); return; }
+  if (btn) { btn.disabled = true; btn.textContent = "กำลังตรวจ..."; }
+  try {
+    const r = await fetch(API_BASE + "/coupon/check", {
+      method: "POST",
+      body: JSON.stringify({ code, packageId: state.pkg ? state.pkg.id : "", phone: state.phone || "" })
+    });
+    const d = await r.json().catch(() => ({}));
+    if (d.ok) {
+      state.coupon = { code: normalizeCouponCode(code), couponValue: d.couponValue };
+      render();
+      return;
+    }
+    showErr(d.reason || "ตรวจรหัสคูปองไม่สำเร็จ กรุณาลองใหม่");
+  } catch (e) {
+    showErr("ตรวจรหัสคูปองไม่สำเร็จ กรุณาลองใหม่");
+  } finally {
+    if (btn && btn.isConnected) { btn.disabled = false; btn.textContent = "ตรวจรหัส"; }
+  }
+}
+
+function clearCoupon() {
+  state.coupon = null;
+  render();
+}
+
+// ให้รหัสตรงกับที่เก็บในระบบ (ตัวพิมพ์ใหญ่ ไม่มีขีด)
+function normalizeCouponCode(code) {
+  return String(code || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
 }
 
 // ติดตามสถานะคำสั่งซื้อจนกว่าแอดมินจะกดยืนยันการสมัคร
@@ -2312,14 +2375,21 @@ async function submitPayment() {
       render(screens.result(false, check.reason || "สลิปไม่ถูกต้องหรือไม่สามารถตรวจสอบได้"));
       return;
     }
-    const amount = firstPriceOf(state.pkg) - shopDiscountInfo(state.pkg).amount;
+    const cpOff = state.coupon ? Number(state.coupon.couponValue) || 0 : 0;
+    const amount = firstPriceOf(state.pkg) - shopDiscountInfo(state.pkg).amount - cpOff;
     const created = await postJSON(CONFIG.BACKEND_ENDPOINT, {
       serial: state.serial, phone: state.phone,
       package: state.pkg, amount, time: new Date().toISOString(),
+      couponCode: state.coupon ? state.coupon.code : "",
       lineUserId: state.lineUser ? state.lineUser.userId : "",
       shipping: state.shipping || (state.netCarrier ? { carrier: state.netCarrier } : null),
       slipRef: check && check.ref ? check.ref : ""
     });
+    if (created && created.error) {
+      // เช่น คูปองถูกใช้ไปแล้วระหว่างรอ: ให้ลูกค้าติดต่อร้านพร้อมสลิป
+      render(screens.result(false, created.error, true));
+      return;
+    }
     // แจ้งไลน์ร้านเป็นเรื่องรอง ถ้าพลาดไม่ควรทำให้ลูกค้าเห็นว่าชำระไม่สำเร็จ
     try {
       await sendToLine({
