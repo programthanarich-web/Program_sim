@@ -982,7 +982,7 @@ let portTimer = null;
 
 function portEnsurePolling() {
   const m = saInit();
-  if (!m.orderId || portTimer || m.status === "port_cancelled" || m.status === "port_ready") return;
+  if (!m.orderId || portTimer || m.status === "port_cancelled") return;
   portTimer = setInterval(portTick, 8000);
 }
 
@@ -997,11 +997,12 @@ async function portTick() {
     const res = await fetch(API_BASE + "/port/status?id=" + encodeURIComponent(m.orderId), { cache: "no-store" });
     if (!res.ok) return;
     const d = await res.json();
-    if (!d.status || d.status === m.status) return;
+    if (!d.status) return;
+    const changed = d.status !== m.status || JSON.stringify(d.portPackageIds || []) !== JSON.stringify(m.portPackageIds || []);
     m.status = d.status;
-    m.portPackageId = d.portPackageId || "";
-    if (d.status === "port_ready" || d.status === "port_cancelled") portStopPolling();
-    if (history_[history_.length - 1] === "port-wait") render();
+    m.portPackageIds = d.portPackageIds || [];
+    if (d.status === "port_cancelled") portStopPolling();
+    if (changed && history_[history_.length - 1] === "port-wait") render();
   } catch (e) { /* ลองใหม่รอบถัดไป */ }
 }
 
@@ -1611,6 +1612,61 @@ const screens = {
 
   // เมนูโปรเน็ตเบอร์เดิม: รอ OTP จากร้าน → ร้านเลือกแพ็กเกจ → ลูกค้าชำระหรือยกเลิก
   "port-wait"() {
+    hero.classList.add("hidden");
+    const m = saInit();
+    portEnsurePolling();
+    const cancelBtn = `<button class="btn ghost" style="margin-top:10px" onclick="portCancelRequest()">ยกเลิกการสมัครโปรเบอร์เดิม</button>`;
+    if (m.status === "port_cancelled") {
+      return `<div class="card"><h3 style="text-align:center">ยกเลิกการสมัครโปรเบอร์เดิมแล้ว</h3>
+        <button class="btn" onclick="resetTo('home')">กลับหน้าหลัก</button></div>`;
+    }
+    if (m.status === "port_ready") {
+      const ids = m.portPackageIds || [];
+      const list = PACKAGES.filter(p => p.simAge && ids.includes(p.id));
+      return `<div class="card">
+        <h3 style="text-align:center">แพ็กเกจที่ใช้ได้กับเบอร์ ${esc(m.phone)}</h3>
+        <p class="hint" style="text-align:center">เลือกแพ็กเกจที่ต้องการแล้วกดชำระเงินได้เลย ถ้าไม่โอเคกดยกเลิกการสมัครได้</p>
+        ${list.length ? planCardsHtml(list) : `<p class="hint" style="text-align:center;padding:20px 0">ไม่พบแพ็กเกจ กรุณาติดต่อร้าน</p>`}
+        ${cancelBtn}
+      </div>`;
+    }
+    if (m.status === "port_verified") {
+      return `<div class="card">
+        <h3 style="text-align:center">OTP ถูกต้องแล้ว</h3>
+        <p class="hint" style="text-align:center">กรุณารอทางร้านเลือกแพ็กเกจที่เบอร์ ${esc(m.phone)} สามารถใช้ได้ ระบบจะแสดงแพ็กเกจในหน้านี้อัตโนมัติ</p>
+        ${cancelBtn}
+      </div>`;
+    }
+    if (m.status === "port_otp") {
+      return `<div class="card">
+        <h3 style="text-align:center">ส่ง OTP ให้ทางร้านแล้ว</h3>
+        <p class="hint" style="text-align:center">กรุณารอทางร้านตรวจสอบ OTP ของเบอร์ ${esc(m.phone)} สถานะจะขึ้นในหน้านี้อัตโนมัติ</p>
+        ${cancelBtn}
+      </div>`;
+    }
+    const retryNote = m.status === "port_need_otp"
+      ? `<div class="err" style="display:block">OTP ไม่ถูกต้อง กรุณากรอก OTP ใหม่ที่ส่งเข้าเบอร์ของคุณ</div>`
+      : "";
+    const sample0 = CONFIG.portOtpSample;
+    return `<div class="card m2">
+      <div class="m2-step">ขั้นตอนที่ 1</div>
+      <div class="m2-title">รอรับ OTP ที่ส่งเข้าเบอร์ ${esc(m.phone)}</div>
+      <p class="hint">ทางร้านจะตรวจสอบเบอร์และส่ง OTP เข้าเบอร์ของคุณ เมื่อได้รับ OTP แล้วให้กรอกเลขด้านล่าง</p>
+      <div class="m2-step">ขั้นตอนที่ 2</div>
+      <label class="m2-title" for="portOtp">กรอกเลข OTP <span class="req">*</span></label>
+      <input id="portOtp" class="m2-input" type="tel" inputmode="numeric" maxlength="8" placeholder="กรอกเลข OTP">
+      <div class="m2-sample">
+        <div class="m2-sample-h">ตัวอย่างรูป OTP</div>
+        ${sample0 ? `<img src="${sample0}" alt="ตัวอย่างรูป OTP">` : `<div class="m2-sample-empty">ยังไม่ได้ตั้งรูปตัวอย่าง OTP (ตั้งได้ที่หลังบ้าน)</div>`}
+      </div>
+      ${retryNote}
+      <div class="err" style="${m.err ? "display:block" : ""}">${esc(m.err || "")}</div>
+      <button class="btn m2-btn" onclick="portSendOtp()">ส่ง OTP ให้ทางร้าน</button>
+      ${cancelBtn}
+    </div>`;
+  },
+
+  "port-wait-old"() {
     hero.classList.add("hidden");
     const m = saInit();
     portEnsurePolling();
