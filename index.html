@@ -1426,10 +1426,11 @@ const screens = {
     setTimeout(refreshMyOrders, 0);
     return `
       <style>
-        @keyframes qi-spin { to { transform: rotate(360deg); } }
-        .qi-ring { position:absolute; inset:-6px; border-radius:20px; border:3px solid transparent;
-          border-top-color:#0b5cad; border-right-color:rgba(11,92,173,.35);
-          animation: qi-spin 1s linear infinite; pointer-events:none; }
+        @keyframes qi-glow { 0%,100% { box-shadow: 0 0 0 0 rgba(11,92,173,.45); } 50% { box-shadow: 0 0 0 10px rgba(11,92,173,0); } }
+        @keyframes qi-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        .qi-hl { animation: qi-glow 1.6s ease-out infinite; border-radius: 16px; }
+        .qi-finger { position:absolute; top:-16px; right:-6px; font-size:34px; line-height:1;
+          animation: qi-bob 1s ease-in-out infinite; pointer-events:none; }
         .qi-hint { background:#0b5cad; color:#fff; border-radius:12px; padding:10px 14px;
           font-size:15px; font-weight:700; text-align:center; margin:0 0 12px; }
       </style>
@@ -1438,8 +1439,8 @@ const screens = {
         ${highlightRegister ? `<div class="qi-hint">กดปุ่ม "ลงทะเบียนซิม" เพื่อเริ่มต้น</div>` : ""}
 
         <div class="quick-grid">
-          <button class="qi" onclick="startRegister()" style="position:relative">
-            ${highlightRegister ? `<span class="qi-ring"></span>` : ""}
+          <button class="qi${highlightRegister ? " qi-hl" : ""}" onclick="startRegister()" style="position:relative">
+            ${highlightRegister ? `<span class="qi-finger">👆</span>` : ""}
             <div class="qi-icon">${menuIconHtml("register", "🗂️")}</div><b>${quickLabel("register", "ลงทะเบียนซิม")}</b>
           </button>
           <button class="qi" onclick="go('net-carrier')">
@@ -2751,7 +2752,7 @@ loadRemoteSettings().then(() => {
   render();
   if (highlightRegister) {
     setTimeout(() => {
-      const el = document.querySelector(".qi-ring");
+      const el = document.querySelector(".qi-hl");
       if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 300);
   }
