@@ -517,6 +517,126 @@ function renderSideMenu() {
     </nav>`;
 }
 
+/* ----- สถานะการสมัครของลูกค้า (จำไว้ในเครื่อง ปิดแอปแล้วเปิดใหม่ยังเห็น) ----- */
+const MY_ORDERS_KEY = "program_my_orders_v1";
+const MY_ORDER_LABEL = {
+  order: {
+    new: "รอร้านตรวจสอบรายการ",
+    confirmed: "ร้านยืนยันแพ็กเกจ กำลังสมัครให้",
+    done: "สมัครเน็ตเรียบร้อยแล้ว",
+    rejected: "ไม่สามารถสมัครได้ กรุณาติดต่อร้าน"
+  },
+  port: {
+    port_wait: "รอยืนยัน OTP กับทางร้าน",
+    port_need_otp: "รอยืนยัน OTP กับทางร้าน",
+    port_otp: "ร้านกำลังตรวจ OTP",
+    port_verified: "ร้านกำลังเลือกแพ็กเกจให้",
+    port_ready: "มีแพ็กเกจให้เลือก กดเพื่อชำระค่าแพ็กเกจ",
+    port_cancelled: "ยกเลิกแล้ว"
+  }
+};
+
+function myOrdersLoad() {
+  try {
+    const v = JSON.parse(localStorage.getItem(MY_ORDERS_KEY) || "[]");
+    return Array.isArray(v) ? v.filter(x => x && x.id && (x.kind === "order" || x.kind === "port")) : [];
+  } catch (e) { return []; }
+}
+
+function myOrdersSave(list) {
+  try { localStorage.setItem(MY_ORDERS_KEY, JSON.stringify(list.slice(0, 10))); } catch (e) { /* ไม่มี localStorage ก็ใช้งานต่อได้ */ }
+}
+
+// จำคำสั่งซื้อ/คำขอเบอร์เดิมไว้ในเครื่อง (ใหม่สุดอยู่บน)
+function rememberMyOrder(entry) {
+  const list = myOrdersLoad().filter(x => x.id !== entry.id);
+  list.unshift({ ...entry, createdAt: new Date().toISOString() });
+  myOrdersSave(list);
+}
+
+function dropMyOrder(id) { myOrdersSave(myOrdersLoad().filter(x => x.id !== id)); }
+
+function hideMyOrder(id) { dropMyOrder(id); render(); }
+
+// กล่องสถานะบนหน้าแรก (ข้อมูลสถานะจะโหลดเข้ามาหลังหน้าแสดงผล)
+function myOrdersBoxHtml() {
+  const list = myOrdersLoad().slice(0, 3);
+  if (!list.length) return "";
+  return `
+    <div class="card" id="myOrdersBox">
+      <h3 style="margin:0 0 6px">📋 สถานะการสมัครของคุณ</h3>
+      <div class="mo-list">${list.map(x => `
+        <div style="padding:12px 0;border-top:1px solid #eef2f7">
+          <b>${esc(x.pkg || "แพ็กเกจเน็ต")}</b>
+          <div style="font-size:14px;color:#667085;margin-top:4px">กำลังโหลดสถานะ...</div>
+        </div>`).join("")}</div>
+    </div>`;
+}
+
+async function refreshMyOrders() {
+  if (!document.getElementById("myOrdersBox")) return;
+  const list = myOrdersLoad().slice(0, 3);
+  const rows = await Promise.all(list.map(async x => {
+    const path = x.kind === "port" ? "/port/status?id=" : "/orders/status?id=";
+    try {
+      const r = await fetch(API_BASE + path + encodeURIComponent(x.id), { cache: "no-store" });
+      if (!r.ok) return { x, status: "", failed: true };
+      const d = await r.json();
+      return { x, status: d.status || "" };
+    } catch (e) {
+      return { x, status: "", failed: true };
+    }
+  }));
+  const target = document.querySelector("#myOrdersBox .mo-list");
+  if (!target || !target.isConnected) return; // หน้าถูกเปลี่ยนไปแล้ว
+  target.innerHTML = rows.map(myOrderItemHtml).join("");
+}
+
+function myOrderItemHtml({ x, status, failed }) {
+  const label = failed
+    ? "ยังไม่ได้โหลดสถานะ (เปิดหน้านี้ใหม่อีกครั้ง)"
+    : ((MY_ORDER_LABEL[x.kind] || {})[status] || "กำลังดำเนินการ");
+  const canOpen = !failed && !(x.kind === "port" && status === "port_cancelled");
+  const openLabel = x.kind === "port" && status === "port_ready" ? "ชำระค่าแพ็กเกจ →" : "ดูรายละเอียด →";
+  return `
+    <div style="padding:12px 0;border-top:1px solid #eef2f7">
+      <div><b>${esc(x.pkg || "แพ็กเกจเน็ต")}</b>${x.orderNo ? ` <small style="color:#667085">#${esc(x.orderNo)}</small>` : ""}</div>
+      <div style="font-size:14px;color:#344054;margin-top:4px">${esc(label)}</div>
+      <div style="margin-top:8px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        ${canOpen ? `<button onclick="openMyOrder('${esc(x.id)}','${esc(status)}')" style="background:#0b5cad;color:#fff;border:0;border-radius:10px;padding:8px 12px;font-size:14px">${openLabel}</button>` : ""}
+        <button onclick="hideMyOrder('${esc(x.id)}')" style="background:none;border:0;color:#667085;font-size:14px;text-decoration:underline;padding:0">ซ่อน</button>
+      </div>
+    </div>`;
+}
+
+// เปิดรายการที่จำไว้: คำสั่งซื้อ → หน้าติดตาม/ผล, เบอร์เดิม → กลับไปหน้าตรวจ OTP/เลือกแพ็กเกจ
+function openMyOrder(id, status) {
+  const x = myOrdersLoad().find(v => v.id === id);
+  if (!x) return;
+  if (x.kind === "port") {
+    const m = saInit();
+    m.orderId = x.id;
+    m.orderNo = x.orderNo || "";
+    m.phone = x.phone || "";
+    m.carrier = x.carrier || "";
+    m.status = status || "port_wait";
+    m.portPackageIds = [];
+    m.err = "";
+    m.submitting = false;
+    state.mode = "shop";
+    state.serial = "";
+    state.phone = m.phone;
+    state.shipping = { carrier: m.carrier, phone: m.phone, simAge: true, simOver1Year: true, portOrderId: x.id };
+    go("port-wait");
+    portTick();
+    portEnsurePolling();
+    return;
+  }
+  if (status === "done") { render(screens.result(true, "สมัครเน็ตเรียบร้อยแล้ว ขอบคุณที่ใช้บริการ")); return; }
+  if (status === "rejected") { render(screens.result(false, "ไม่สามารถดำเนินการสมัครได้ กรุณาติดต่อร้านค้า", true)); return; }
+  watchOrder(x.id, x.orderNo);
+}
+
 // การ์ดเบอร์มงคล (แสดงเฉพาะเมื่อหลังบ้านมีเบอร์ตั้งไว้)
 function luckyCard() {
   const list = Array.isArray(CONFIG.luckyNumbers) ? CONFIG.luckyNumbers.filter(x => x && x.number) : [];
@@ -962,6 +1082,7 @@ async function saNext() {
     m.orderNo = d.orderNo || "";
     m.status = "port_wait";
     m.portPackageId = "";
+    rememberMyOrder({ kind: "port", id: m.orderId, orderNo: m.orderNo, pkg: "โปรเบอร์เดิม · " + m.carrier, phone: m.phone, carrier: m.carrier });
   } catch (e) {
     m.submitting = false;
     m.err = "ส่งข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง (" + (e && e.message ? e.message : "error") + ")";
@@ -1250,6 +1371,7 @@ function esc(s) {
 const screens = {
   home() {
     hero.classList.add("hidden");
+    setTimeout(refreshMyOrders, 0);
     return `
       <div class="card">
         ${bannerHtml()}
@@ -1269,6 +1391,8 @@ const screens = {
           </button>
         </div>
       </div>
+
+      ${myOrdersBoxHtml()}
 
       ${luckyCard()}
 
@@ -2401,6 +2525,9 @@ async function submitPayment() {
     history_ = ["home"];
     clearSavedState();
     if (created && created.id) {
+      // ชำระเบอร์เดิมแล้ว: ย้ายจากรายการคำขอเบอร์เดิมมาเป็นคำสั่งซื้อนี้
+      if (state.shipping && state.shipping.portOrderId) dropMyOrder(state.shipping.portOrderId);
+      rememberMyOrder({ kind: "order", id: created.id, orderNo: created.orderNo || "", pkg: state.pkg ? state.pkg.name : "แพ็กเกจเน็ต" });
       // รอแอดมินยืนยันการสมัครเน็ตหลังร้านก่อน จึงค่อยแสดงว่าสำเร็จ
       watchOrder(created.id, created.orderNo);
     } else {
