@@ -936,7 +936,7 @@ async function saUpload(input) {
   render();
 }
 
-function saNext() {
+async function saNext() {
   const m = saInit();
   let msg = "";
   if (!m.carrier) msg = "กรุณาเลือกเครือข่ายมือถือ";
@@ -950,12 +950,102 @@ function saNext() {
     return;
   }
   m.err = "";
+  m.submitting = true;
+  try {
+    const res = await fetch(API_BASE + "/port/request", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone: m.phone, carrier: m.carrier, confirmImg: m.confirmUrl })
+    });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok || !d.id) throw new Error(d.error || "fail");
+    m.orderId = d.id;
+    m.orderNo = d.orderNo || "";
+    m.status = "port_wait";
+    m.portPackageId = "";
+  } catch (e) {
+    m.submitting = false;
+    m.err = "ส่งข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
+    render();
+    return;
+  }
+  m.submitting = false;
+  // เตรียมข้อมูลไว้ให้การชำระเงินใช้ต่อ (ผูกกับคำสั่งซื้อเบอร์เดิม)
   state.mode = "shop";
   state.serial = "";
   state.phone = m.phone;
-  state.shipping = { carrier: m.carrier, phone: m.phone, confirmImg: m.confirmUrl, simAge: true, simOver1Year: true };
-  // ใช้รายการแพ็กเกจเดิมของเครือข่ายที่เลือก
-  go("sim-age-packages");
+  state.shipping = { carrier: m.carrier, phone: m.phone, confirmImg: m.confirmUrl, simAge: true, simOver1Year: true, portOrderId: m.orderId };
+  go("port-wait");
+}
+
+// ----- ตรวจสถานะเบอร์เดิมจากร้าน (OTP และแพ็กเกจที่ร้านเลือก) -----
+let portTimer = null;
+
+function portEnsurePolling() {
+  const m = saInit();
+  if (!m.orderId || portTimer || m.status === "port_cancelled" || m.status === "port_ready") return;
+  portTimer = setInterval(portTick, 8000);
+}
+
+function portStopPolling() {
+  if (portTimer) { clearInterval(portTimer); portTimer = null; }
+}
+
+async function portTick() {
+  const m = saInit();
+  if (!m.orderId) { portStopPolling(); return; }
+  try {
+    const res = await fetch(API_BASE + "/port/status?id=" + encodeURIComponent(m.orderId), { cache: "no-store" });
+    if (!res.ok) return;
+    const d = await res.json();
+    if (!d.status || d.status === m.status) return;
+    m.status = d.status;
+    m.portPackageId = d.portPackageId || "";
+    if (d.status === "port_ready" || d.status === "port_cancelled") portStopPolling();
+    if (history_[history_.length - 1] === "port-wait") render();
+  } catch (e) { /* ลองใหม่รอบถัดไป */ }
+}
+
+async function portSendOtp() {
+  const m = saInit();
+  const otp = (document.getElementById("portOtp")?.value || "").trim();
+  if (!/^\d{4,8}$/.test(otp)) {
+    m.err = "กรุณากรอกเลข OTP ให้ถูกต้อง (ตัวเลข 4-8 หลัก)";
+    render();
+    return;
+  }
+  try {
+    const res = await fetch(API_BASE + "/port/otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: m.orderId, otp })
+    });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(d.error || "ส่ง OTP ไม่สำเร็จ ลองใหม่อีกครั้ง");
+    m.status = "port_otp";
+    m.err = "";
+  } catch (e) {
+    m.err = e.message || "ส่ง OTP ไม่สำเร็จ ลองใหม่อีกครั้ง";
+  }
+  render();
+}
+
+async function portCancelRequest() {
+  if (!confirm("ยืนยันยกเลิกการสมัครโปรเบอร์เดิม?")) return;
+  const m = saInit();
+  try {
+    const res = await fetch(API_BASE + "/port/cancel", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: m.orderId })
+    });
+    if (!res.ok) throw new Error("fail");
+    m.status = "port_cancelled";
+    portStopPolling();
+  } catch (e) {
+    m.err = "ยกเลิกไม่สำเร็จ ลองใหม่อีกครั้ง";
+  }
+  render();
 }
 
 /* ----- ลงทะเบียนซิม ----- */
@@ -1517,9 +1607,53 @@ const screens = {
         <label class="m2-agree"><input type="checkbox" id="saSim1y" ${m.sim1y ? "checked" : ""} onchange="saSet('sim1y', this.checked)"> ยืนยันอายุซิมเกิน 1 ปีแล้ว</label>
         <label class="m2-agree"><input type="checkbox" id="saAgree" ${m.agree ? "checked" : ""} onchange="saSet('agree', this.checked)"> ยืนยันความถูกต้อง</label>
         <div class="err" id="saErr" style="${m.err ? "display:block" : ""}">${esc(m.err || "")}</div>
-        <button class="btn m2-btn ${saReady() ? "" : "is-disabled"}" id="saBtn" onclick="saNext()">เลือกแพ็กเกจเน็ต →</button>
+        <button class="btn m2-btn ${saReady() ? "" : "is-disabled"}" id="saBtn" onclick="saNext()">รอยืนยัน OTP เพื่อตรวจสอบเน็ต</button>
         <button class="btn ghost" style="margin-top:10px" onclick="goBack()">ย้อนกลับ</button>
       </div>`;
+  },
+
+  // เมนูโปรเน็ตเบอร์เดิม: รอ OTP จากร้าน → ร้านเลือกแพ็กเกจ → ลูกค้าชำระหรือยกเลิก
+  "port-wait"() {
+    hero.classList.add("hidden");
+    const m = saInit();
+    portEnsurePolling();
+    const cancelBtn = `<button class="btn ghost" style="margin-top:10px" onclick="portCancelRequest()">ยกเลิกการสมัครโปรเบอร์เดิม</button>`;
+    if (m.status === "port_cancelled") {
+      return `<div class="card"><h3 style="text-align:center">ยกเลิกการสมัครโปรเบอร์เดิมแล้ว</h3>
+        <button class="btn" onclick="resetTo('home')">กลับหน้าหลัก</button></div>`;
+    }
+    if (m.status === "port_ready") {
+      const list = PACKAGES.filter(p => p.simAge && p.id === m.portPackageId);
+      return `<div class="card">
+        <h3 style="text-align:center">แพ็กเกจที่ใช้ได้กับเบอร์ ${esc(m.phone)}</h3>
+        <p class="hint" style="text-align:center">ถ้าโอเคกับแพ็กเกจนี้ กดเลือกเพื่อชำระเงินได้เลย ถ้าไม่โอเคกดยกเลิกการสมัครได้</p>
+        ${list.length ? planCardsHtml(list) : `<p class="hint" style="text-align:center;padding:20px 0">ไม่พบแพ็กเกจ กรุณาติดต่อร้าน</p>`}
+        ${cancelBtn}
+      </div>`;
+    }
+    if (m.status === "port_otp") {
+      return `<div class="card">
+        <h3 style="text-align:center">ส่ง OTP ให้ทางร้านแล้ว</h3>
+        <p class="hint" style="text-align:center">กรุณารอทางร้านตรวจสอบเบอร์ ${esc(m.phone)} และเลือกแพ็กเกจที่ใช้ได้ สถานะจะขึ้นในหน้านี้อัตโนมัติ</p>
+        ${cancelBtn}
+      </div>`;
+    }
+    const sample = CONFIG.portOtpSample;
+    return `<div class="card m2">
+      <div class="m2-step">ขั้นตอนที่ 1</div>
+      <div class="m2-title">รอรับ OTP ที่ส่งเข้าเบอร์ ${esc(m.phone)}</div>
+      <p class="hint">ทางร้านจะตรวจสอบเบอร์และส่ง OTP เข้าเบอร์ของคุณ เมื่อได้รับ OTP แล้วให้กรอกเลขด้านล่าง</p>
+      <div class="m2-step">ขั้นตอนที่ 2</div>
+      <label class="m2-title" for="portOtp">กรอกเลข OTP <span class="req">*</span></label>
+      <input id="portOtp" class="m2-input" type="tel" inputmode="numeric" maxlength="8" placeholder="กรอกเลข OTP">
+      <div class="m2-sample">
+        <div class="m2-sample-h">ตัวอย่างรูป OTP</div>
+        ${sample ? `<img src="${sample}" alt="ตัวอย่างรูป OTP">` : `<div class="m2-sample-empty">ยังไม่ได้ตั้งรูปตัวอย่าง OTP (ตั้งได้ที่หลังบ้าน)</div>`}
+      </div>
+      <div class="err" style="${m.err ? "display:block" : ""}">${esc(m.err || "")}</div>
+      <button class="btn m2-btn" onclick="portSendOtp()">ส่ง OTP ให้ทางร้าน</button>
+      ${cancelBtn}
+    </div>`;
   },
 
   // เมนูโปรเน็ตเบอร์เดิม: แสดงเฉพาะแพ็กเกจที่ตั้งไว้ในกลุ่มโปรเบอร์เดิม ของเครือข่ายที่เลือก
