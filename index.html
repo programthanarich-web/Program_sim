@@ -568,18 +568,21 @@ function stationHtml(kind, status) {
   }).join("");
   const barColor = failed ? "#d0d5dd" : "#12b76a";
   const label = (MY_ORDER_LABEL[kind] || {})[status] || "กำลังดำเนินการ";
+  // ข้อความบอกสถานะเฉพาะตอนจบแล้ว ผิดพลาด หรือพร้อมให้ชำระเบอร์เดิม
   const where = allDone
     ? "🎉 เสร็จสิ้นแล้ว"
     : failed
       ? `⚠️ ${esc(label)}`
-      : `📍 ตอนนี้อยู่ขั้นตอนที่ ${cur + 1}/${n}: ${esc(label)}`;
+      : status === "port_ready"
+        ? `📍 ${esc(label)}`
+        : "";
   return `
     <div style="position:relative;display:flex;margin:14px 4px 4px">
       <div style="position:absolute;top:12px;left:12.5%;right:12.5%;height:3px;background:#d0d5dd;border-radius:2px"></div>
       <div style="position:absolute;top:12px;left:12.5%;width:${(pct * 75).toFixed(2)}%;height:3px;background:${barColor};border-radius:2px"></div>
       ${dots}
     </div>
-    <div style="font-size:14px;color:${failed ? "#b42318" : "#101828"};margin-top:10px">${where}</div>`;
+    ${where ? `<div style="font-size:14px;color:${failed ? "#b42318" : "#101828"};margin-top:10px">${where}</div>` : ""}`;
 }
 
 function myOrdersLoad() {
@@ -642,16 +645,13 @@ function myOrderItemHtml({ x, status, failed }) {
   const label = failed
     ? "ยังไม่ได้โหลดสถานะ (เปิดหน้านี้ใหม่อีกครั้ง)"
     : ((MY_ORDER_LABEL[x.kind] || {})[status] || "กำลังดำเนินการ");
-  const canOpen = !failed && !(x.kind === "port" && status === "port_cancelled");
-  const openLabel = x.kind === "port" && status === "port_ready" ? "ชำระค่าแพ็กเกจ →" : "ดูรายละเอียด →";
+  // ทั้งกล่องกดได้ เปิดรายละเอียดหรือหน้าชำระต่อได้เลย (ยกเว้นตอนโหลดสถานะไม่ได้)
+  const clickable = !failed;
   return `
-    <div style="padding:12px 0;border-top:1px solid #eef2f7">
+    <div ${clickable ? `onclick="openMyOrder('${esc(x.id)}','${esc(status)}')"` : ""}
+         style="padding:12px 0;border-top:1px solid #eef2f7;${clickable ? "cursor:pointer" : ""}">
       <div><b>${esc(x.pkg || "แพ็กเกจเน็ต")}</b>${x.orderNo ? ` <small style="color:#667085">#${esc(x.orderNo)}</small>` : ""}</div>
       ${failed ? `<div style="font-size:14px;color:#344054;margin-top:4px">${esc(label)}</div>` : stationHtml(x.kind, status)}
-      <div style="margin-top:8px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-        ${canOpen ? `<button onclick="openMyOrder('${esc(x.id)}','${esc(status)}')" style="background:#0b5cad;color:#fff;border:0;border-radius:10px;padding:8px 12px;font-size:14px">${openLabel}</button>` : ""}
-        <button onclick="hideMyOrder('${esc(x.id)}')" style="background:none;border:0;color:#667085;font-size:14px;text-decoration:underline;padding:0">ซ่อน</button>
-      </div>
     </div>`;
 }
 
