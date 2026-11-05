@@ -1427,20 +1427,17 @@ const screens = {
     return `
       <style>
         @keyframes qi-glow { 0%,100% { box-shadow: 0 0 0 0 rgba(11,92,173,.45); } 50% { box-shadow: 0 0 0 10px rgba(11,92,173,0); } }
-        @keyframes qi-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        @keyframes qi-nudge { 0%,100% { transform: translateX(0); } 50% { transform: translateX(-8px); } }
         .qi-hl { animation: qi-glow 1.6s ease-out infinite; border-radius: 16px; }
-        .qi-finger { position:absolute; top:-16px; right:-6px; font-size:34px; line-height:1;
-          animation: qi-bob 1s ease-in-out infinite; pointer-events:none; }
-        .qi-hint { background:#0b5cad; color:#fff; border-radius:12px; padding:10px 14px;
-          font-size:15px; font-weight:700; text-align:center; margin:0 0 12px; }
+        .qi-finger { position:absolute; right:-30px; bottom:12px; font-size:30px; line-height:1;
+          animation: qi-nudge 1s ease-in-out infinite; pointer-events:none; }
       </style>
       <div class="card">
         ${bannerHtml()}
-        ${highlightRegister ? `<div class="qi-hint">กดปุ่ม "ลงทะเบียนซิม" เพื่อเริ่มต้น</div>` : ""}
 
         <div class="quick-grid">
           <button class="qi${highlightRegister ? " qi-hl" : ""}" onclick="startRegister()" style="position:relative">
-            ${highlightRegister ? `<span class="qi-finger">👆</span>` : ""}
+            ${highlightRegister ? `<span class="qi-finger">👈</span>` : ""}
             <div class="qi-icon">${menuIconHtml("register", "🗂️")}</div><b>${quickLabel("register", "ลงทะเบียนซิม")}</b>
           </button>
           <button class="qi" onclick="go('net-carrier')">
