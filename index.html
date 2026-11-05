@@ -528,13 +528,59 @@ const MY_ORDER_LABEL = {
   },
   port: {
     port_wait: "รอยืนยัน OTP กับทางร้าน",
-    port_need_otp: "รอยืนยัน OTP กับทางร้าน",
-    port_otp: "ร้านกำลังตรวจ OTP",
+    port_need_otp: "ร้านขอ OTP ใหม่ กรุณายืนยันกับทางร้าน",
+    port_otp: "ส่ง OTP แล้ว รอร้านตรวจสอบ",
     port_verified: "ร้านกำลังเลือกแพ็กเกจให้",
     port_ready: "มีแพ็กเกจให้เลือก กดเพื่อชำระค่าแพ็กเกจ",
     port_cancelled: "ยกเลิกแล้ว"
   }
 };
+
+// ขั้นตอนแบบสถานี (เรียงจากซ้ายไปขวา) ของคำสั่งซื้อปกติและเบอร์เดิม
+const MY_ORDER_STEPS = {
+  order: {
+    steps: ["ชำระแล้ว", "ร้านตรวจรายการ", "ร้านสมัครให้", "สมัครเสร็จ"],
+    stepOf: { new: 1, confirmed: 2, done: 3, rejected: 1 }
+  },
+  port: {
+    steps: ["ส่งเบอร์แล้ว", "ยืนยัน OTP", "ร้านเลือกแพ็ก", "ชำระเงิน"],
+    stepOf: { port_wait: 1, port_need_otp: 1, port_otp: 1, port_verified: 2, port_ready: 3 }
+  }
+};
+
+// วาดเส้นสถานี: สถานีที่ผ่านแล้วเป็นสีเขียวมีเครื่องหมายถูก สถานีปัจจุบันเป็นสีน้ำเงิน
+function stationHtml(kind, status) {
+  const cfg = MY_ORDER_STEPS[kind];
+  const n = cfg.steps.length;
+  const failed = status === "rejected" || status === "port_cancelled";
+  const allDone = status === "done";
+  const cur = cfg.stepOf[status] !== undefined ? cfg.stepOf[status] : 0;
+  const pct = allDone ? 1 : cur / (n - 1);
+  const dots = cfg.steps.map((name, i) => {
+    const isDone = allDone || (!failed && i < cur);
+    const isCur = !allDone && i === cur;
+    const color = isCur && failed ? "#b42318" : isDone ? "#12b76a" : isCur ? "#0b5cad" : "#d0d5dd";
+    const mark = isDone ? "✓" : (isCur && failed ? "!" : String(i + 1));
+    return `<div style="flex:1;text-align:center;position:relative;z-index:1">
+        <div style="width:26px;height:26px;margin:0 auto;border-radius:50%;background:${color};color:#fff;font-size:13px;font-weight:700;line-height:26px;${isCur ? "box-shadow:0 0 0 4px rgba(11,92,173,.18)" : ""}">${mark}</div>
+        <div style="font-size:11px;line-height:1.3;margin-top:6px;color:${isCur ? "#101828" : "#667085"};font-weight:${isCur ? 700 : 500}">${esc(name)}</div>
+      </div>`;
+  }).join("");
+  const barColor = failed ? "#d0d5dd" : "#12b76a";
+  const label = (MY_ORDER_LABEL[kind] || {})[status] || "กำลังดำเนินการ";
+  const where = allDone
+    ? "🎉 เสร็จสิ้นแล้ว"
+    : failed
+      ? `⚠️ ${esc(label)}`
+      : `📍 ตอนนี้อยู่ขั้นตอนที่ ${cur + 1}/${n}: ${esc(label)}`;
+  return `
+    <div style="position:relative;display:flex;margin:14px 4px 4px">
+      <div style="position:absolute;top:12px;left:12.5%;right:12.5%;height:3px;background:#d0d5dd;border-radius:2px"></div>
+      <div style="position:absolute;top:12px;left:12.5%;width:${(pct * 75).toFixed(2)}%;height:3px;background:${barColor};border-radius:2px"></div>
+      ${dots}
+    </div>
+    <div style="font-size:14px;color:${failed ? "#b42318" : "#101828"};margin-top:10px">${where}</div>`;
+}
 
 function myOrdersLoad() {
   try {
@@ -601,7 +647,7 @@ function myOrderItemHtml({ x, status, failed }) {
   return `
     <div style="padding:12px 0;border-top:1px solid #eef2f7">
       <div><b>${esc(x.pkg || "แพ็กเกจเน็ต")}</b>${x.orderNo ? ` <small style="color:#667085">#${esc(x.orderNo)}</small>` : ""}</div>
-      <div style="font-size:14px;color:#344054;margin-top:4px">${esc(label)}</div>
+      ${failed ? `<div style="font-size:14px;color:#344054;margin-top:4px">${esc(label)}</div>` : stationHtml(x.kind, status)}
       <div style="margin-top:8px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
         ${canOpen ? `<button onclick="openMyOrder('${esc(x.id)}','${esc(status)}')" style="background:#0b5cad;color:#fff;border:0;border-radius:10px;padding:8px 12px;font-size:14px">${openLabel}</button>` : ""}
         <button onclick="hideMyOrder('${esc(x.id)}')" style="background:none;border:0;color:#667085;font-size:14px;text-decoration:underline;padding:0">ซ่อน</button>
@@ -2324,12 +2370,15 @@ function payShopOnly(id) {
   state.mode = "shop";
   state.pkg = PACKAGES.find(p => p.id === id);
   state.coupon = null;
-  const ready = needsSimForm() ? (state.serial && state.phone) : state.phone;
+  // ลูกค้าที่มาจากเมนูต่อแพ็กเกจเดือนที่ 2 / เบอร์เดิม มีเบอร์และรูปยืนยันแล้ว ไม่ต้องกรอกซีเรียลซิมซ้ำ
+  const hasRenewalInfo = !!(state.shipping && (state.shipping.confirmImg || state.shipping.simAge));
+  const needSerial = needsSimForm() && !hasRenewalInfo;
+  const ready = needSerial ? (state.serial && state.phone) : state.phone;
   if (ready) {
     go("payment");
   } else {
     state.skipToPayment = true;
-    go(needsSimForm() ? "sim-form" : "net-phone");
+    go(needSerial ? "sim-form" : "net-phone");
   }
 }
 
