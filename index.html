@@ -1325,6 +1325,14 @@ function regAcceptChange(on) {
   if (go) go.classList.toggle("is-disabled", !on);
 }
 
+// ไปขั้นกรอกเลข Serial ก่อน (ยังไม่เปิดหน้าลงทะเบียนของเครือข่าย)
+function regToSerial() {
+  const accepted = document.getElementById("regAccept");
+  if (!accepted || !accepted.checked) return;
+  state.regStep = 1;
+  render();
+}
+
 function regNext() {
   const serial = (document.getElementById("regSerial").value || "").replace(/\s/g, "");
   if (!/^\d{10,25}$/.test(serial)) { showRegErr("หมายเลข Serial ไม่ถูกต้อง (ตัวเลข 10-25 หลัก)"); return; }
@@ -1350,20 +1358,30 @@ async function regSubmit() {
   const btn = document.getElementById("regSubmit");
   btn.disabled = true;
   btn.textContent = "กำลังบันทึก...";
+  const regUrl = ((CONFIG.carrierRegister || {})[state.regCarrier] || {}).url || "";
+  // เปิดแท็บใหม่ตอนผู้ใช้กดปุ่ม (ก่อนรอผลบันทึก) เพื่อไม่ให้ตัวบล็อกป็อปอัปปิดหน้า
+  const tab = regUrl ? window.open("about:blank", "_blank") : null;
   try {
     const r = await postJSON(CONFIG.BACKEND_ENDPOINT, {
       serial: state.regSerial, phone,
       package: carrierLabel(state.regCarrier), amount: 0, time: new Date().toISOString()
     });
     if (!r || !r.ok) throw new Error("save failed");
+    if (regUrl) {
+      if (tab) tab.location.href = regUrl;
+      else window.location.href = regUrl;
+    }
     state.regStep = 1;
     state.regSerial = "";
     history_ = ["home"];
     clearSavedState();
-    render(screens.result(true, "บันทึกการลงทะเบียนซิมเรียบร้อยแล้ว ร้านจะตรวจสอบและติดต่อกลับ"));
+    render(screens.result(true, regUrl
+      ? "บันทึก Serial เรียบร้อยแล้ว กรุณาทำการลงทะเบียนซิมต่อในหน้าที่เปิดขึ้น"
+      : "บันทึกการลงทะเบียนซิมเรียบร้อยแล้ว ร้านจะตรวจสอบและติดต่อกลับ"));
   } catch (e) {
+    if (tab) { try { tab.close(); } catch (err) {} }
     btn.disabled = false;
-    btn.textContent = "✅ บันทึกการลงทะเบียน";
+    btn.textContent = "✅ บันทึกและไปหน้าลงทะเบียน";
     showRegErr("บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
   }
 }
@@ -1700,9 +1718,7 @@ const screens = {
             <label class="reg-accept"><input type="checkbox" id="regAccept" onchange="regAcceptChange(this.checked)"> ข้าพเจ้าได้อ่านและยอมรับเงื่อนไขข้างต้นแล้ว</label>
             <p class="reg-terms-note">หากไม่ยอมรับเงื่อนไข ทางร้านขอสงวนสิทธิ์ในการลงทะเบียนซิม และไม่สามารถกดปุ่มลงทะเบียนได้</p>
           </div>
-          ${reg.url
-            ? `<a id="regGo" class="reg-btn green reg-link is-disabled" href="${reg.url}" target="_blank" rel="noopener">ลงทะเบียนซิม</a>`
-            : `<button class="reg-btn" disabled>ยังไม่ได้ตั้งลิงก์ลงทะเบียน</button>`}
+          <button id="regGo" class="reg-btn green reg-link is-disabled" onclick="regToSerial()">ถัดไป: กรอกเลขซีเรียลซิม →</button>
         </div>`;
     }
     if (step === 1) {
@@ -1728,7 +1744,8 @@ const screens = {
         <label class="reg-label" for="regPhone">เบอร์โทรที่ได้รับ (ถ้ามี)</label>
         <input id="regPhone" class="reg-inp" type="tel" inputmode="numeric" maxlength="12" placeholder="0812345678">
         <div class="reg-err" id="regErr"></div>
-        <button class="reg-btn green" id="regSubmit" onclick="regSubmit()">✅ บันทึกการลงทะเบียน</button>
+        <p class="reg-terms-note">กดปุ่มด้านล่างเพื่อบันทึก Serial แล้วระบบจะเปิดหน้าลงทะเบียนของ ${title} ให้ทำต่อ</p>
+        <button class="reg-btn green" id="regSubmit" onclick="regSubmit()">✅ บันทึกและไปหน้าลงทะเบียน</button>
         <button class="reg-btn ghost" onclick="regBackStep()">แก้ไข Serial</button>
       </div>`;
   },
