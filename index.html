@@ -1864,6 +1864,7 @@ const screens = {
       <div class="reg-dark">
         ${head}
         <div class="reg-sub">เล็งบาร์โค้ดบนซองซิมให้อยู่ในกรอบ ระบบจะกรอกเลขให้เอง</div>
+        ${photoBlock("simBarcodeEx", "ตัวอย่างบาร์โค้ดบนซองซิม")}
         <div style="position:relative;border-radius:12px;overflow:hidden;background:#f4f7fc;border:1px solid var(--line);aspect-ratio:4/3;margin-top:10px">
           <video id="regVideo" playsinline muted style="width:100%;height:100%;object-fit:cover"></video>
           <div style="position:absolute;left:8%;right:8%;top:32%;height:36%;border:2px dashed rgba(11,94,215,.7);border-radius:10px;pointer-events:none"></div>
@@ -1877,6 +1878,7 @@ const screens = {
       <div class="reg-dark">
         ${head}
         <div class="reg-sub">กรอกเลข Serial ที่พิมพ์อยู่บนซิม</div>
+        ${photoBlock("simNumberEx", "ตัวอย่างหมายเลขซีเรียลซิม")}
         <label class="reg-label" for="regSerial">เลข Serial ซิม (8966...)</label>
         <input id="regSerial" class="reg-inp mono" inputmode="numeric" placeholder="896604..." value="${state.regSerial || ""}">
         ${state.regScanOk ? `<div class="reg-sub" style="margin-top:8px;color:var(--ok)">สแกนได้แล้ว ตรวจสอบเลขก่อนกดถัดไป</div>` : ""}
