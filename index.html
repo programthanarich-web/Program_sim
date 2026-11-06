@@ -1855,7 +1855,9 @@ const screens = {
       <div class="reg-dark">
         ${head}
         <div class="reg-sub">เลือกวิธีใส่เลข Serial ที่อยู่บนซองซิม</div>
+        ${photoBlock("simBarcodeEx", "ตัวอย่างบาร์โค้ดบนซองซิม")}
         <button class="reg-choice" onclick="regPickMode('scan')"><span class="reg-choice-ic">📷</span><span><b>สแกนบาร์โค้ดบนซิม</b><small>เปิดกล้องแล้วเล็งบาร์โค้ดบนซองซิม</small></span></button>
+        ${photoBlock("simNumberEx", "ตัวอย่างหมายเลขซีเรียลซิม")}
         <button class="reg-choice" onclick="regPickMode('type')"><span class="reg-choice-ic">⌨️</span><span><b>กรอกเลขซีเรียลซิม</b><small>พิมพ์เลข 8966... ที่พิมพ์อยู่บนซิมเอง</small></span></button>
       </div>`;
       }
