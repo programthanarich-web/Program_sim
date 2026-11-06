@@ -269,20 +269,21 @@
   .sample figcaption{font-size:12px;color:var(--muted);padding:8px 10px;text-align:center}
   .hidden{display:none !important}
   /* หน้าลงทะเบียนซิม (โทนมืดตามดีไซน์ต้นแบบ) */
-  .reg-dark{background:#0f172a;color:#e2e8f0;border-radius:16px;padding:16px;border:1px solid rgba(255,255,255,0.08);margin-top:8px}
+  .reg-dark{background:var(--card);color:var(--text);border-radius:var(--radius);padding:16px;border:1px solid var(--line);box-shadow:0 2px 10px rgba(16,40,80,.06);margin-top:8px}
   .reg-title{font-size:16px;font-weight:800;margin-bottom:6px}
-  .reg-sub{font-size:13px;color:#94a3b8;margin-bottom:12px}
-  .reg-label{display:block;font-size:13px;font-weight:700;color:#94a3b8;margin:12px 0 6px}
-  .reg-inp{width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 14px;color:#fff;font-size:15px;outline:none;font-family:inherit}
+  .reg-sub{font-size:13px;color:var(--muted);margin-bottom:12px}
+  .reg-label{display:block;font-size:13px;font-weight:700;color:var(--muted);margin:12px 0 6px}
+  .reg-inp{width:100%;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 14px;color:var(--text);font-size:15px;outline:none;font-family:inherit}
+  .reg-inp:focus{border-color:var(--blue-l)}
   .reg-inp.mono{font-family:monospace}
-  .reg-btn{width:100%;margin-top:12px;background:linear-gradient(135deg,#4f46e5,#7c3aed);border:none;border-radius:10px;padding:12px;color:#fff;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit}
+  .reg-btn{width:100%;margin-top:12px;background:linear-gradient(135deg,var(--blue),var(--blue-d));border:none;border-radius:10px;padding:12px;color:#fff;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit}
   .reg-btn.green{background:linear-gradient(135deg,#059669,#10b981)}
-  .reg-btn.ghost{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-weight:600}
+  .reg-btn.ghost{background:#f4f7fc;border:1px solid var(--line);color:var(--muted);font-weight:600}
   .reg-btn:disabled{opacity:.6}
-  .reg-found{background:rgba(5,150,105,0.08);border:1px solid rgba(5,150,105,0.3);border-radius:12px;padding:14px;margin-top:10px}
-  .reg-found-h{color:#6ee7b7;font-weight:700;margin-bottom:8px}
-  .reg-kv{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:#94a3b8}
-  .reg-kv b{color:#e2e8f0;font-family:monospace}
+  .reg-found{background:rgba(18,161,80,0.08);border:1px solid rgba(18,161,80,0.3);border-radius:12px;padding:14px;margin-top:10px}
+  .reg-found-h{color:var(--ok);font-weight:700;margin-bottom:8px}
+  .reg-kv{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--muted)}
+  .reg-kv b{color:var(--text);font-family:monospace}
   .reg-logo{display:flex;justify-content:center;margin-bottom:10px}
   .sim-logo{width:56px;height:56px;object-fit:contain;border-radius:10px}
   .sim-logo-empty{font-size:28px;line-height:56px}
@@ -1718,7 +1719,11 @@ const screens = {
             <label class="reg-accept"><input type="checkbox" id="regAccept" onchange="regAcceptChange(this.checked)"> ข้าพเจ้าได้อ่านและยอมรับเงื่อนไขข้างต้นแล้ว</label>
             <p class="reg-terms-note">หากไม่ยอมรับเงื่อนไข ทางร้านขอสงวนสิทธิ์ในการลงทะเบียนซิม และไม่สามารถกดปุ่มลงทะเบียนได้</p>
           </div>
-          <button id="regGo" class="reg-btn green reg-link is-disabled" onclick="regToSerial()">ถัดไป: กรอกเลขซีเรียลซิม →</button>
+          ${state.regCarrier === "truemove H"
+            ? `<button id="regGo" class="reg-btn green reg-link is-disabled" onclick="regToSerial()">ถัดไป: กรอกเลขซีเรียลซิม →</button>`
+            : (reg.url
+              ? `<a id="regGo" class="reg-btn green reg-link is-disabled" href="${reg.url}" target="_blank" rel="noopener">ลงทะเบียนซิม</a>`
+              : `<button class="reg-btn" disabled>ยังไม่ได้ตั้งลิงก์ลงทะเบียน</button>`)}
         </div>`;
     }
     if (step === 1) {
