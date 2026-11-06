@@ -284,6 +284,10 @@
   .reg-found-h{color:var(--ok);font-weight:700;margin-bottom:8px}
   .reg-kv{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--muted)}
   .reg-kv b{color:var(--text);font-family:monospace}
+  .reg-choice{width:100%;display:flex;gap:12px;align-items:center;text-align:left;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:10px;cursor:pointer;font-family:inherit;color:var(--text);font-size:15px;font-weight:700}
+  .reg-choice:hover{border-color:var(--blue-l)}
+  .reg-choice-ic{font-size:26px}
+  .reg-choice small{display:block;color:var(--muted);font-size:12px;font-weight:400;margin-top:2px}
   .reg-logo{display:flex;justify-content:center;margin-bottom:10px}
   .sim-logo{width:56px;height:56px;object-fit:contain;border-radius:10px}
   .sim-logo-empty{font-size:28px;line-height:56px}
@@ -1303,6 +1307,8 @@ function startRegister() {
   state.regCarrier = null;
   state.regStep = 1;
   state.regSerial = "";
+  state.regMode = "choose";
+  state.regScanOk = false;
   go("sim-carrier");
 }
 
@@ -1310,6 +1316,8 @@ function pickCarrier(key) {
   state.regCarrier = key;
   state.regStep = "guide";
   state.regSerial = "";
+  state.regMode = "choose";
+  state.regScanOk = false;
   go("sim-register");
 }
 
@@ -1334,7 +1342,7 @@ function regToSerial() {
   render();
 }
 
-// ── สแกนบาร์โค้ดซิม (ใช้กล้องของลูกค้าในหน้าร้านเอง, กรอกเลขซ้ำได้เสมอ) ──
+// ── สแกนบาร์โค้ดซิม (หน้าแยกจากการกรอกเลข, กรอกเลขเองได้เสมอ) ──
 let regScanStream = null, regScanTimer = null;
 
 function regLoadScript(src) {
@@ -1357,27 +1365,36 @@ function regScanStop() {
   if (regScanStream) regScanStream.getTracks().forEach(t => t.stop());
   regScanStream = null;
   clearTimeout(regScanTimer);
-  const box = document.getElementById("regScan");
-  if (box) box.classList.add("hidden");
 }
 
-async function regScanStart() {
-  const box = document.getElementById("regScan");
-  const msg = document.getElementById("regScanMsg");
-  if (!box) return;
-  if (msg) msg.textContent = "";
+function regFail(msg) {
+  regScanStop();
+  state.regMode = "type";
+  state.regScanOk = false;
+  render();
+  showRegErr(msg);
+}
+
+// เลือกวิธีใส่ Serial: scan | type | choose
+function regPickMode(mode) {
+  regScanStop();
+  state.regMode = mode;
+  if (mode !== "type") state.regScanOk = false;
+  render();
+  if (mode === "scan") regOpenCamera();
+}
+
+async function regOpenCamera() {
+  const v = document.getElementById("regVideo");
+  if (!v) return;
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    showRegErr("เครื่องนี้เปิดกล้องไม่ได้ กรุณาพิมพ์เลข Serial เอง");
-    return;
+    return regFail("เครื่องนี้เปิดกล้องไม่ได้ กรุณากรอกเลขซีเรียลเอง");
   }
   try {
     regScanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
   } catch (e) {
-    showRegErr("เปิดกล้องไม่ได้ กรุณาอนุญาตการใช้กล้อง หรือพิมพ์เลข Serial เอง");
-    return;
+    return regFail("เปิดกล้องไม่ได้ กรุณาอนุญาตการใช้กล้อง หรือกรอกเลขซีเรียลเอง");
   }
-  box.classList.remove("hidden");
-  const v = document.getElementById("regVideo");
   v.srcObject = regScanStream;
   await v.play().catch(() => {});
   regScanLoop();
@@ -1397,16 +1414,12 @@ async function regScanLoop() {
       zx.setHints(hints);
     } catch (e) { zx = null; }
   }
-  if (!detector && !zx) {
-    regScanStop();
-    showRegErr("เครื่องนี้สแกนไม่ได้ กรุณาพิมพ์เลข Serial เอง");
-    return;
-  }
+  if (!detector && !zx) return regFail("เครื่องนี้สแกนไม่ได้ กรุณากรอกเลขซีเรียลเอง");
   const v = document.getElementById("regVideo");
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
   const tick = async () => {
-    if (!regScanStream) return;
+    if (!regScanStream || !v) return;
     if (v.readyState >= 2 && v.videoWidth) {
       try {
         let raw = "";
@@ -1423,13 +1436,13 @@ async function regScanLoop() {
         const serial = regExtractSerial(raw);
         if (serial) {
           regScanStop();
-          const input = document.getElementById("regSerial");
-          if (input) input.value = serial;
-          const msg = document.getElementById("regScanMsg");
-          if (msg) msg.textContent = "สแกนได้แล้ว ตรวจสอบเลขก่อนกดถัดไป";
+          state.regSerial = serial;
+          state.regScanOk = true;
+          state.regMode = "type";
+          render();
           return;
         }
-      } catch (e) { /* ยังหาบาร์โค้ดไม่เจอในเฟรมนี้ */ }
+      } catch (e) { /* ยังไม่เจอบาร์โค้ดในเฟรมนี้ */ }
     }
     regScanTimer = setTimeout(tick, 150);
   };
@@ -1441,6 +1454,7 @@ function regNext() {
   const serial = (document.getElementById("regSerial").value || "").replace(/\s/g, "");
   if (!/^\d{10,25}$/.test(serial)) { showRegErr("หมายเลข Serial ไม่ถูกต้อง (ตัวเลข 10-25 หลัก)"); return; }
   state.regSerial = serial;
+  state.regScanOk = false;
   state.regStep = 2;
   render();
 }
@@ -1448,11 +1462,14 @@ function regNext() {
 function regBackStep() {
   regScanStop();
   state.regStep = 1;
+  state.regMode = "type";
   render();
 }
 
 function regGoForm() {
   state.regStep = 1;
+  state.regMode = "choose";
+  state.regScanOk = false;
   state.regSerial = "";
   render();
 }
@@ -1831,26 +1848,42 @@ const screens = {
         </div>`;
     }
     if (step === 1) {
+      const mode = state.regMode || "choose";
+      const head = `<div class="reg-logo">${carrierLogoBox(state.regCarrier)}</div><div class="reg-title">📲 ${title}</div>`;
+      if (mode === "choose") {
+        return `
+      <div class="reg-dark">
+        ${head}
+        <div class="reg-sub">เลือกวิธีใส่เลข Serial ที่อยู่บนซองซิม</div>
+        <button class="reg-choice" onclick="regPickMode('scan')"><span class="reg-choice-ic">📷</span><span><b>สแกนบาร์โค้ดบนซิม</b><small>เปิดกล้องแล้วเล็งบาร์โค้ดบนซองซิม</small></span></button>
+        <button class="reg-choice" onclick="regPickMode('type')"><span class="reg-choice-ic">⌨️</span><span><b>กรอกเลขซีเรียลซิม</b><small>พิมพ์เลข 8966... ที่พิมพ์อยู่บนซิมเอง</small></span></button>
+      </div>`;
+      }
+      if (mode === "scan") {
+        return `
+      <div class="reg-dark">
+        ${head}
+        <div class="reg-sub">เล็งบาร์โค้ดบนซองซิมให้อยู่ในกรอบ ระบบจะกรอกเลขให้เอง</div>
+        <div style="position:relative;border-radius:12px;overflow:hidden;background:#f4f7fc;border:1px solid var(--line);aspect-ratio:4/3;margin-top:10px">
+          <video id="regVideo" playsinline muted style="width:100%;height:100%;object-fit:cover"></video>
+          <div style="position:absolute;left:8%;right:8%;top:32%;height:36%;border:2px dashed rgba(11,94,215,.7);border-radius:10px;pointer-events:none"></div>
+        </div>
+        <div class="reg-err" id="regErr"></div>
+        <button class="reg-btn" onclick="regPickMode('type')">สแกนไม่ได้ กรอกเลขเองแทน</button>
+        <button class="reg-btn ghost" onclick="regPickMode('choose')">← ย้อนกลับ</button>
+      </div>`;
+      }
       return `
-        <div class="reg-dark">
-          <div class="reg-logo">${carrierLogoBox(state.regCarrier)}</div>
-          <div class="reg-title">📲 ${title}</div>
-          <div class="reg-sub">กรอกเลข Serial ที่พิมพ์อยู่บนซิม</div>
-          <label class="reg-label" for="regSerial">เลข Serial ซิม (8966...)</label>
-          <input id="regSerial" class="reg-inp mono" inputmode="numeric" placeholder="896604..." value="${state.regSerial || ""}">
-          <button class="reg-btn ghost" onclick="regScanStart()">📷 สแกนบาร์โค้ดบนซิม</button>
-          <div id="regScan" class="hidden" style="margin-top:10px">
-            <div style="position:relative;border-radius:12px;overflow:hidden;background:#f4f7fc;border:1px solid var(--line);aspect-ratio:4/3">
-              <video id="regVideo" playsinline muted style="width:100%;height:100%;object-fit:cover"></video>
-              <div style="position:absolute;left:8%;right:8%;top:32%;height:36%;border:2px dashed rgba(11,94,215,.7);border-radius:10px;pointer-events:none"></div>
-            </div>
-            <div class="reg-sub" style="margin-top:8px">เล็งบาร์โค้ดให้อยู่ในกรอบ ระบบจะกรอกเลขให้อัตโนมัติ ถ้าสแกนไม่ได้ พิมพ์เลขเองได้เลย</div>
-            <button class="reg-btn ghost" onclick="regScanStop()">ปิดกล้อง</button>
-          </div>
-          <div id="regScanMsg" class="reg-sub" style="margin-top:8px;color:var(--ok)"></div>
-          <div class="reg-err" id="regErr"></div>
-          <button class="reg-btn" onclick="regNext()">ถัดไป →</button>
-        </div>`;
+      <div class="reg-dark">
+        ${head}
+        <div class="reg-sub">กรอกเลข Serial ที่พิมพ์อยู่บนซิม</div>
+        <label class="reg-label" for="regSerial">เลข Serial ซิม (8966...)</label>
+        <input id="regSerial" class="reg-inp mono" inputmode="numeric" placeholder="896604..." value="${state.regSerial || ""}">
+        ${state.regScanOk ? `<div class="reg-sub" style="margin-top:8px;color:var(--ok)">สแกนได้แล้ว ตรวจสอบเลขก่อนกดถัดไป</div>` : ""}
+        <div class="reg-err" id="regErr"></div>
+        <button class="reg-btn" onclick="regNext()">ถัดไป →</button>
+        <button class="reg-btn ghost" onclick="regPickMode('choose')">← ย้อนกลับ</button>
+      </div>`;
     }
     return `
       <div class="reg-dark">
