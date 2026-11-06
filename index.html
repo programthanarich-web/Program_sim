@@ -288,6 +288,9 @@
   .reg-choice:hover{border-color:var(--blue-l)}
   .reg-choice-ic{font-size:26px}
   .reg-choice small{display:block;color:var(--muted);font-size:12px;font-weight:400;margin-top:2px}
+  .reg-tabs{display:flex;border-bottom:2px solid var(--line);margin-top:14px}
+  .reg-tab{flex:1;background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;padding:12px 4px;color:var(--muted);font-weight:700;font-size:15px;cursor:pointer;font-family:inherit}
+  .reg-tab:hover{color:var(--blue);border-bottom-color:var(--blue)}
   .reg-logo{display:flex;justify-content:center;margin-bottom:10px}
   .sim-logo{width:56px;height:56px;object-fit:contain;border-radius:10px}
   .sim-logo-empty{font-size:28px;line-height:56px}
@@ -1855,10 +1858,11 @@ const screens = {
       <div class="reg-dark">
         ${head}
         <div class="reg-sub">เลือกวิธีใส่เลข Serial ที่อยู่บนซองซิม</div>
-        ${photoBlock("simBarcodeEx", "ตัวอย่างบาร์โค้ดบนซองซิม")}
-        <button class="reg-choice" onclick="regPickMode('scan')"><span class="reg-choice-ic">📷</span><span><b>สแกนบาร์โค้ดบนซิม</b><small>เปิดกล้องแล้วเล็งบาร์โค้ดบนซองซิม</small></span></button>
         ${photoBlock("simNumberEx", "ตัวอย่างหมายเลขซีเรียลซิม")}
-        <button class="reg-choice" onclick="regPickMode('type')"><span class="reg-choice-ic">⌨️</span><span><b>กรอกเลขซีเรียลซิม</b><small>พิมพ์เลข 8966... ที่พิมพ์อยู่บนซิมเอง</small></span></button>
+        <div class="reg-tabs">
+          <button class="reg-tab" onclick="regPickMode('scan')">📷 สแกนบาร์โค้ด</button>
+          <button class="reg-tab" onclick="regPickMode('type')">⌨️ กรอกตัวเลข</button>
+        </div>
       </div>`;
       }
       if (mode === "scan") {
