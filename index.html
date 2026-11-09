@@ -1478,7 +1478,7 @@ function regToggleNoPhone(on) {
 function regNext() {
   regScanStop();
   const serial = (document.getElementById("regSerial").value || "").replace(/\s/g, "");
-  if (!/^\d{10,25}$/.test(serial)) { showRegErr("หมายเลข Serial ไม่ถูกต้อง (ตัวเลข 10-25 หลัก)"); return; }
+  if (!/^\d{18}$/.test(serial)) { showRegErr("หมายเลขซีเรียลต้องมี 18 หลัก"); return; }
   const noPhone = !!(document.getElementById("regNoPhone") || {}).checked;
   const phone = ((document.getElementById("regPhone") || {}).value || "").replace(/[-\s]/g, "").trim();
   if (!noPhone && !/^0\d{8,9}$/.test(phone)) { showRegErr("กรุณากรอกเบอร์มือถือให้ถูกต้อง หรือติ๊กว่าซิมไม่มีเบอร์"); return; }
@@ -1509,7 +1509,7 @@ async function regSubmit() {
   if (phone && !/^0\d{8,9}$/.test(phone)) { showRegErr("เบอร์มือถือไม่ถูกต้อง"); return; }
   const btn = document.getElementById("regSubmit") || { disabled: false, textContent: "" };
   btn.disabled = true;
-  btn.textContent = "กำลังบันทึก...";
+  btn.textContent = "กำลังเข้าสู่หน้าลงทะเบียนซิม...";
   const regUrl = ((CONFIG.carrierRegister || {})[state.regCarrier] || {}).url || "";
   try {
     const r = await postJSON(CONFIG.BACKEND_ENDPOINT, {
@@ -1886,7 +1886,7 @@ const screens = {
           <button class="reg-tab active" type="button">⌨️ กรอกตัวเลข</button>
         </div>
         <label class="reg-label" for="regSerial">เลขซีเรียลซิม (18 หลัก)</label>
-        <input id="regSerial" class="reg-inp mono" inputmode="numeric" placeholder="896604XXXXXXXXXXXX" value="${state.regSerial || ""}">
+        <input id="regSerial" class="reg-inp mono" inputmode="numeric" maxlength="18" oninput="this.value=this.value.replace(/\D/g,'').slice(0,18)" placeholder="896604XXXXXXXXXXXX" value="${state.regSerial || ""}">
         <div class="reg-sub" style="margin-top:6px">พบเลขซีเรียลบนซองซิมการ์ด เริ่มต้นด้วย 8966</div>
         <label class="reg-label" for="regPhone">เบอร์มือถือที่ต้องการลงทะเบียน</label>
         <input id="regPhone" class="reg-inp" type="tel" inputmode="numeric" maxlength="12" placeholder="0812345678" value="${state.regPhone || ""}" ${state.regNoPhone ? "disabled" : ""}>
