@@ -691,8 +691,24 @@ function openMyOrder(id, status) {
     return;
   }
   if (status === "done") { render(screens.result(true, "สมัครเน็ตเรียบร้อยแล้ว ขอบคุณที่ใช้บริการ", false, "สมัครเน็ตเสร็จแล้ว")); return; }
-  if (status === "rejected") { render(screens.result(false, "ไม่สามารถดำเนินการสมัครได้ กรุณาติดต่อร้านค้า", true)); return; }
+  if (status === "rejected") { rejectResultScreen(x.id); return; }
   watchOrder(x.id, x.orderNo);
+}
+
+// หน้า "ดำเนินการไม่สำเร็จ" พร้อมสาเหตุที่แอดมินเลือก (ถ้ามี)
+function rejectResultScreen(orderId, knownReason) {
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const show = reason => {
+    const msg = reason
+      ? "ไม่สามารถดำเนินการสมัครได้<br><b>สาเหตุ:</b> " + esc(reason) + "<br>กรุณาติดต่อร้านค้า"
+      : "ไม่สามารถดำเนินการสมัครได้ กรุณาติดต่อร้านค้า";
+    render(screens.result(false, msg, true));
+  };
+  if (knownReason !== undefined) return show(knownReason);
+  fetch(API_BASE + "/orders/status?id=" + encodeURIComponent(orderId), { cache: "no-store" })
+    .then(r => r.json())
+    .then(d => show(d.rejectReason || ""))
+    .catch(() => show(""));
 }
 
 // การ์ดเบอร์มงคล (แสดงเฉพาะเมื่อหลังบ้านมีเบอร์ตั้งไว้)
@@ -2861,7 +2877,7 @@ function watchOrder(orderId, orderNo) {
       } else if (d.status === "rejected") {
         clearInterval(orderTimer);
         clearOrder();
-        render(screens.result(false, "ไม่สามารถดำเนินการสมัครได้ กรุณาติดต่อร้านค้า", true));
+        rejectResultScreen(orderId, d.rejectReason);
       } else if (ORDER_STEP_OF[d.status] !== undefined && ORDER_STEP_OF[d.status] !== lastStep) {
         // วาดหน้าใหม่เฉพาะตอนที่ขั้นตอนเปลี่ยน
         lastStep = ORDER_STEP_OF[d.status];
