@@ -2076,6 +2076,7 @@ const screens = {
     }
     if (m.status === "port_verified") {
       return `<div class="card">
+        ${portStationBlock(m.status)}
         <h3 style="text-align:center">OTP ถูกต้องแล้ว</h3>
         <p class="hint" style="text-align:center">กรุณารอทางร้านเลือกแพ็กเกจที่เบอร์ ${esc(m.phone)} สามารถใช้ได้ ระบบจะแสดงแพ็กเกจในหน้านี้อัตโนมัติ</p>
         ${cancelBtn}
@@ -2083,6 +2084,7 @@ const screens = {
     }
     if (m.status === "port_otp") {
       return `<div class="card">
+        ${portStationBlock(m.status)}
         <h3 style="text-align:center">ส่ง OTP ให้ทางร้านแล้ว</h3>
         <p class="hint" style="text-align:center">กรุณารอทางร้านตรวจสอบ OTP ของเบอร์ ${esc(m.phone)} สถานะจะขึ้นในหน้านี้อัตโนมัติ</p>
         ${cancelBtn}
@@ -2096,6 +2098,7 @@ const screens = {
     portEnsureCountdown();
     const timerLine = `<div id="portTimer" style="text-align:center;font-weight:700;color:#b45309;margin:8px 0">${portTimerText()}</div>`;
     return `<div class="card m2">
+      ${portStationBlock(m.status)}
       <div class="m2-step">ขั้นตอนที่ 1</div>
       <div class="m2-title">รอรับ OTP ที่ส่งเข้าเบอร์ ${esc(m.phone)}</div>
       <p class="hint">ทางร้านจะตรวจสอบเบอร์และส่ง OTP เข้าเบอร์ของคุณ เมื่อได้รับ OTP แล้วให้กรอกเลขด้านล่าง</p>
@@ -2688,15 +2691,33 @@ function hourglassSvg(size, color = "#ffffff") {
 }
 
 // เปอร์เซ็นต์ความคืบหน้าของคำสั่งซื้อ (ขั้นที่ 1 จาก 4 = 0%, ขั้นสุดท้าย = 100%)
-function orderProgressPct(cur) {
-  return Math.round(Math.max(0, Math.min(cur, ORDER_STEPS.length - 1)) / (ORDER_STEPS.length - 1) * 100);
+function orderProgressPct(cur, total = ORDER_STEPS.length) {
+  return Math.round(Math.max(0, Math.min(cur, total - 1)) / (total - 1) * 100);
+}
+
+// ขั้นตอนของเบอร์เดิม (โปรเบอร์เดิม) ใช้เส้นทางสถานีแบบเดียวกับคำสั่งซื้อ
+const PORT_STEPS = [
+  { label: "ส่งเบอร์ให้ทางร้านแล้ว" },
+  { label: "ส่ง OTP ให้ทางร้านแล้ว" },
+  { label: "ทางร้านตรวจ OTP และเลือกแพ็กเกจ" },
+  { label: "เลือกแพ็กเกจและชำระเงิน" }
+];
+function portStepCur(status) {
+  return { port_wait: 0, port_need_otp: 1, port_otp: 1, port_verified: 2, port_ready: 3 }[status] ?? 0;
+}
+// กล่องสถานีของเบอร์เดิม วาดแล้วให้ไฟเดินทางไปถึงสถานีปัจจุบัน
+function portStationBlock(status) {
+  const cur = portStepCur(status);
+  setTimeout(() => animateRoute(cur), 0);
+  return `<div style="margin-bottom:12px">${stepsHtml(cur, PORT_STEPS)}
+    <p class="next-step">📍 ตอนนี้: <b>${PORT_STEPS[cur].label}</b><br>ถัดไป: ${PORT_STEPS[Math.min(cur + 1, PORT_STEPS.length - 1)].label}</p></div>`;
 }
 
 // เส้นทางแบบสถานีรถไฟ + แถบพลังงานที่ไหลตามความคืบหน้า (ขั้นตอนที่ผ่านแล้วมีไฟวิ่งอยู่)
-function stepsHtml(cur) {
-  const n = ORDER_STEPS.length;
-  const pct = orderProgressPct(cur);
-  const rows = ORDER_STEPS.map((s, i) => {
+function stepsHtml(cur, steps = ORDER_STEPS) {
+  const n = steps.length;
+  const pct = orderProgressPct(cur, n);
+  const rows = steps.map((s, i) => {
     const done = i < cur;
     const now = i === cur;
     const dotBg = done ? "#12b76a" : now ? "#0b5cad" : "#d0d5dd";
