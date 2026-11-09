@@ -290,7 +290,7 @@
   .reg-choice small{display:block;color:var(--muted);font-size:12px;font-weight:400;margin-top:2px}
   .reg-tabs{display:flex;border-bottom:2px solid var(--line);margin-top:14px}
   .reg-tab{flex:1;background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;padding:12px 4px;color:var(--muted);font-weight:700;font-size:15px;cursor:pointer;font-family:inherit}
-  .reg-tab:hover{color:var(--blue);border-bottom-color:var(--blue)}
+  .reg-tab:hover,.reg-tab.active{color:var(--blue);border-bottom-color:var(--blue)}
   .reg-logo{display:flex;justify-content:center;margin-bottom:10px}
   .sim-logo{width:56px;height:56px;object-fit:contain;border-radius:10px}
   .sim-logo-empty{font-size:28px;line-height:56px}
@@ -1860,9 +1860,14 @@ const screens = {
         <div class="reg-sub">เลือกวิธีใส่เลข Serial ที่อยู่บนซองซิม</div>
         ${photoBlock("simNumberEx", "ตัวอย่างหมายเลขซีเรียลซิม")}
         <div class="reg-tabs">
-          <button class="reg-tab" onclick="regPickMode('scan')">📷 สแกนบาร์โค้ด</button>
-          <button class="reg-tab" onclick="regPickMode('type')">⌨️ กรอกตัวเลข</button>
+          <button class="reg-tab active" type="button">⌨️ กรอกตัวเลข</button>
+          <button class="reg-tab" type="button" onclick="regPickMode('scan')">📷 สแกนบาร์โค้ด</button>
         </div>
+        <label class="reg-label" for="regSerial">เลขซีเรียลซิม (18 หลัก)</label>
+        <input id="regSerial" class="reg-inp mono" inputmode="numeric" placeholder="896604XXXXXXXXXXXX" value="${state.regSerial || ""}">
+        <div class="reg-sub" style="margin-top:6px">พบเลขซีเรียลบนซองซิมการ์ด เริ่มต้นด้วย 8966</div>
+        <div class="reg-err" id="regErr"></div>
+        <button class="reg-btn" onclick="regNext()">ถัดไป →</button>
       </div>`;
       }
       if (mode === "scan") {
