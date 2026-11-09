@@ -1818,7 +1818,7 @@ const screens = {
 
         <label class="field-label" for="serial">หมายเลขซีเรียลซิมที่ได้รับ</label>
         <div class="input"><span class="i">🔢</span>
-          <input type="text" id="serial" inputmode="numeric" placeholder="กรอกตัวเลขบนซิม" value="${state.serial}">
+          <input type="text" id="serial" inputmode="numeric" maxlength="18" oninput="this.value=this.value.replace(/\D/g,'').slice(0,18)" placeholder="กรอกตัวเลขบนซิม 18 หลัก" value="${state.serial}">
         </div>
 
         <div class="how">
@@ -2399,7 +2399,7 @@ function netPhoneNext() {
 
 function validSim(serial, phone) {
   if (!/^0\d{8,9}$/.test(phone)) return "เบอร์มือถือไม่ถูกต้อง";
-  if (!/^\d{10,25}$/.test(serial)) return "หมายเลขซีเรียลซิมไม่ถูกต้อง (ตัวเลข 10-25 หลัก)";
+  if (!/^\d{18}$/.test(serial)) return "หมายเลขซีเรียลซิมต้องเป็นตัวเลข 18 หลักเท่านั้น";
   return null;
 }
 
