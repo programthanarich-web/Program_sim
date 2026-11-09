@@ -1486,7 +1486,7 @@ function regNext() {
   if (!/^\d{18}$/.test(serial)) { showRegErr("หมายเลขซีเรียลต้องมี 18 หลัก"); return; }
   const noPhone = !!(document.getElementById("regNoPhone") || {}).checked;
   const phone = ((document.getElementById("regPhone") || {}).value || "").replace(/[-\s]/g, "").trim();
-  if (!noPhone && !/^0\d{8,9}$/.test(phone)) { showRegErr("กรุณากรอกเบอร์มือถือให้ถูกต้อง หรือติ๊กว่าซิมไม่มีเบอร์"); return; }
+  if (!noPhone && !/^0\d{9}$/.test(phone)) { showRegErr("กรุณากรอกเบอร์มือถือให้ถูกต้อง หรือติ๊กว่าซิมไม่มีเบอร์"); return; }
   state.regSerial = serial;
   state.regNoPhone = noPhone;
   state.regPhone = noPhone ? "" : phone;
@@ -1515,7 +1515,7 @@ async function regSubmit() {
   if (!/^\d{18}$/.test(serialNow)) { showRegErr("กรุณากรอกเลขซีเรียลซิม 18 หลักก่อนลงทะเบียน"); return; }
   state.regSerial = serialNow;
   const phone = state.regNoPhone ? "" : (state.regPhone || "");
-  if (phone && !/^0\d{8,9}$/.test(phone)) { showRegErr("เบอร์มือถือไม่ถูกต้อง"); return; }
+  if (phone && !/^0\d{9}$/.test(phone)) { showRegErr("เบอร์มือถือไม่ถูกต้อง"); return; }
   const btn = document.getElementById("regSubmit") || { disabled: false, textContent: "" };
   btn.disabled = true;
   btn.textContent = "กำลังเข้าสู่หน้าลงทะเบียนซิม...";
@@ -1898,7 +1898,7 @@ const screens = {
         <input id="regSerial" class="reg-inp mono" inputmode="numeric" maxlength="18" oninput="this.value=this.value.replace(/\D/g,'').slice(0,18)" placeholder="896604XXXXXXXXXXXX" value="${state.regSerial || ""}">
         <div class="reg-sub" style="margin-top:6px">พบเลขซีเรียลบนซองซิมการ์ด เริ่มต้นด้วย 8966</div>
         <label class="reg-label" for="regPhone">เบอร์มือถือที่ต้องการลงทะเบียน</label>
-        <input id="regPhone" class="reg-inp" type="tel" inputmode="numeric" maxlength="12" placeholder="0812345678" value="${state.regPhone || ""}" ${state.regNoPhone ? "disabled" : ""}>
+        <input id="regPhone" class="reg-inp" type="tel" inputmode="numeric" maxlength="10" oninput="this.value=this.value.replace(/\D/g,'').slice(0,10)" placeholder="0812345678" value="${state.regPhone || ""}" ${state.regNoPhone ? "disabled" : ""}>
         <label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:14px;cursor:pointer">
           <input type="checkbox" id="regNoPhone" ${state.regNoPhone ? "checked" : ""} onchange="regToggleNoPhone(this.checked)" style="width:18px;height:18px">
           <span>ซิมยังไม่มีเบอร์ (จะได้รับเบอร์หลังลงทะเบียนเสร็จทาง SMS)</span>
