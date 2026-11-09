@@ -1486,8 +1486,7 @@ function regNext() {
   state.regNoPhone = noPhone;
   state.regPhone = noPhone ? "" : phone;
   state.regScanOk = false;
-  state.regStep = 2;
-  render();
+  regSubmit(); // บันทึก Serial แล้วเปิดหน้าลงทะเบียนของทรูทันที
 }
 
 function regBackStep() {
@@ -1508,7 +1507,7 @@ function regGoForm() {
 async function regSubmit() {
   const phone = state.regNoPhone ? "" : (state.regPhone || "");
   if (phone && !/^0\d{8,9}$/.test(phone)) { showRegErr("เบอร์มือถือไม่ถูกต้อง"); return; }
-  const btn = document.getElementById("regSubmit");
+  const btn = document.getElementById("regSubmit") || { disabled: false, textContent: "" };
   btn.disabled = true;
   btn.textContent = "กำลังบันทึก...";
   const regUrl = ((CONFIG.carrierRegister || {})[state.regCarrier] || {}).url || "";
@@ -1534,7 +1533,7 @@ async function regSubmit() {
   } catch (e) {
     if (tab) { try { tab.close(); } catch (err) {} }
     btn.disabled = false;
-    btn.textContent = "✅ บันทึกและไปหน้าลงทะเบียน";
+    btn.textContent = "📲 ลงทะเบียนซิม";
     showRegErr("บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
   }
 }
@@ -1900,7 +1899,7 @@ const screens = {
           <span>ซิมนี้ไม่มีเบอร์ (จะได้รับเบอร์หลังลงทะเบียนเสร็จทาง SMS)</span>
         </label>
         <div class="reg-err" id="regErr"></div>
-        <button class="reg-btn" onclick="regNext()">ถัดไป →</button>
+        <button class="reg-btn green" id="regSubmit" onclick="regNext()">📲 ลงทะเบียนซิม</button>
       </div>`;
       }
       if (mode === "scan") {
