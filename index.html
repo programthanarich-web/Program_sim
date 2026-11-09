@@ -2066,7 +2066,8 @@ const screens = {
     if (m.status === "port_ready") {
       const cancelBtn = `<button class="btn ghost" style="margin-top:10px" onclick="portCancelRequest()">ยกเลิกการสมัครโปรเบอร์เดิม</button>`;
       const ids = m.portPackageIds || [];
-      const list = PACKAGES.filter(p => p.simAge && ids.includes(p.id));
+      // แสดงแพ็กเกจที่ร้านส่งให้ (รวมแพ็กเกจส่งแทนที่ไม่ใช่โปรเบอร์เดิม)
+      const list = PACKAGES.filter(p => ids.includes(p.id));
       return `<div class="card">
         <h3 style="text-align:center">แพ็กเกจที่ใช้ได้กับเบอร์ ${esc(m.phone)}</h3>
         <p class="hint" style="text-align:center">เลือกแพ็กเกจที่ต้องการแล้วกดชำระเงินได้เลย ถ้าไม่โอเคกดยกเลิกการสมัครได้</p>
