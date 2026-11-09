@@ -363,7 +363,7 @@
 <header class="topbar">
   <div class="top-left">
     <button class="menu-btn" onclick="toggleMenu()" aria-label="เมนูทางลัด"><span></span><span></span><span></span></button>
-    <button class="back-btn" id="backBtn" onclick="goBack()">‹ กลับ</button>
+    <button class="back-btn" id="backBtn" onclick="goBack()">กลับ</button>
   </div>
   <div class="top-center" id="brand" onclick="resetTo('home')">
     <div class="logo" id="logoBox"></div>
@@ -412,6 +412,7 @@
 const API_BASE = "https://program-api.programthanarich.workers.dev";
 
 const CONFIG = {
+  liffId: "2010376157-7Fz6A4bg", // LIFF ID ของ ProgramThanaRich (ถ้าหลังบ้านตั้งค่าไว้ จะใช้ค่าจากหลังบ้านแทน)
   // LINE Notify ปิดให้บริการแล้ว (31 มี.ค. 2568) ควรใช้ LINE Messaging API ฝั่งเซิร์ฟเวอร์แทน
   LINE_ENDPOINT: API_BASE + "/line",
   BACKEND_ENDPOINT: API_BASE + "/orders",        // ส่งข้อมูลการชำระเงินเข้าระบบหลังบ้าน
@@ -940,7 +941,7 @@ function planCardsHtml(list) {
       <ul class="plan-feat">
         ${(p.features || []).map(f => `<li>${f}</li>`).join("")}
       </ul>
-      <button class="plan-btn" onclick="selectPackage('${p.id}')">สมัครแพ็กเกจเน็ต →</button>
+ <button class="plan-btn" onclick="selectPackage('${p.id}')">สมัครแพ็กเกจเน็ต</button>
     </div>`;
   }).join("");
 }
@@ -1765,7 +1766,7 @@ const screens = {
         </div>
 
         <div class="err" id="luckyErr"></div>
-        <button class="btn" style="margin-top:14px" onclick="luckyNext()">ไปหน้าชำระเงิน →</button>
+ <button class="btn" style="margin-top:14px" onclick="luckyNext()">ไปหน้าชำระเงิน</button>
       </div>
       <button class="btn ghost" onclick="goBack()">ย้อนกลับ</button>`;
   },
@@ -1804,7 +1805,7 @@ const screens = {
         <label class="m2-title" for="netPhone">กรอกเบอร์โทรศัพท์ <span class="req">*</span></label>
         <input id="netPhone" class="m2-input" type="tel" inputmode="numeric" maxlength="10" placeholder="กรอกเบอร์โทรศัพท์" value="${esc(state.phone || "")}">
         <div class="err" id="netErr"></div>
-        <button class="btn" onclick="netPhoneNext()">เลือกแพ็กเกจเน็ต →</button>
+ <button class="btn" onclick="netPhoneNext()">เลือกแพ็กเกจเน็ต</button>
         <button class="btn ghost" style="margin-top:10px" onclick="goBack()">ย้อนกลับ</button>
       </div>`;
   },
@@ -1862,7 +1863,7 @@ const screens = {
         </div>
 
         <div class="err" id="formErr"></div>
-        <button class="btn" id="simSubmit" onclick="submitSim()">เลือกแพ็คเกจเน็ต →</button>
+ <button class="btn" id="simSubmit" onclick="submitSim()">เลือกแพ็คเกจเน็ต</button>
         <button class="btn ghost" style="margin-top:10px" onclick="goBack()">ย้อนกลับ</button>
       </div>`;
   },
@@ -1956,7 +1957,7 @@ const screens = {
         </div>`}
         <div class="reg-err" id="regErr"></div>
         <button class="reg-btn" onclick="regPickMode('type')">สแกนไม่ได้ กรอกเลขเองแทน</button>
-        <button class="reg-btn ghost" onclick="regPickMode('choose')">← ย้อนกลับ</button>
+ <button class="reg-btn ghost" onclick="regPickMode('choose')">ย้อนกลับ</button>
       </div>`;
       }
       return `
@@ -1968,8 +1969,8 @@ const screens = {
         <input id="regSerial" class="reg-inp mono" inputmode="numeric" placeholder="896604..." value="${state.regSerial || ""}">
         ${state.regScanOk ? `<div class="reg-sub" style="margin-top:8px;color:var(--ok)">สแกนได้แล้ว ตรวจสอบเลขก่อนกดถัดไป</div>` : ""}
         <div class="reg-err" id="regErr"></div>
-        <button class="reg-btn" onclick="regNext()">ถัดไป →</button>
-        <button class="reg-btn ghost" onclick="regPickMode('choose')">← ย้อนกลับ</button>
+ <button class="reg-btn" onclick="regNext()">ถัดไป</button>
+ <button class="reg-btn ghost" onclick="regPickMode('choose')">ย้อนกลับ</button>
       </div>`;
     }
     return `
@@ -2032,7 +2033,7 @@ const screens = {
 
         <label class="m2-agree"><input type="checkbox" id="m2Agree" ${m.agree ? "checked" : ""} onchange="m2Set('agree', this.checked)"> ยืนยันความถูกต้อง</label>
         <div class="err" id="m2Err" style="${m.err ? "display:block" : ""}">${esc(m.err || "")}</div>
-        <button class="btn m2-btn ${m2Ready() ? "" : "is-disabled"}" id="m2Btn" onclick="m2Next()">เลือกแพ็กเกจเน็ต →</button>
+ <button class="btn m2-btn ${m2Ready() ? "" : "is-disabled"}" id="m2Btn" onclick="m2Next()">เลือกแพ็กเกจเน็ต</button>
         <button class="btn ghost" style="margin-top:10px" onclick="goBack()">ย้อนกลับ</button>
       </div>`;
   },
@@ -2267,7 +2268,7 @@ const screens = {
         <div class="qr">${CONFIG.QR_IMAGE_URL
           ? `<img src="${CONFIG.QR_IMAGE_URL}" alt="QR พร้อมเพย์">`
           : `<div class="qr-empty">QR พร้อมเพย์</div>`}</div>
-        ${CONFIG.QR_IMAGE_URL ? `<button type="button" class="qr-dl" onclick="downloadQR()">⬇ ดาวน์โหลด QR Code</button>` : ""}
+ ${CONFIG.QR_IMAGE_URL ? `<button type="button" class="qr-dl" onclick="downloadQR()">ดาวน์โหลด QR Code</button>` : ""}
         ${CONFIG.SLIP_CHECK === false ? "" : `
         <label class="field-label" for="slip">แนบสลิปการโอนเงิน</label>
         <label class="slip-drop" id="slipDrop" for="slip">
@@ -2280,7 +2281,7 @@ const screens = {
         </label>
         <input type="file" id="slip" accept="image/*" class="sr-only" onchange="onSlipPick(this)">`}
         <div class="err" id="payErr"></div>
-        <button class="btn" id="paySubmit" onclick="submitPayment()" style="margin-top:14px">ยืนยันการชำระเงิน →</button>
+ <button class="btn" id="paySubmit" onclick="submitPayment()" style="margin-top:14px">ยืนยันการชำระเงิน</button>
       </div>`;
   },
 
@@ -2576,7 +2577,7 @@ async function submitSim() {
     err.textContent = "ส่งข้อมูลไม่สำเร็จ: " + e.message;
     err.style.display = "block";
     btn.disabled = false;
-    btn.textContent = "เลือกแพ็คเกจเน็ต →";
+ btn.textContent = "เลือกแพ็คเกจเน็ต ";
   }
 }
 
@@ -2614,7 +2615,7 @@ function showShopOnlyPopup(p) {
           <li>เมื่อทางร้านสมัครเน็ตให้ลูกค้าเสร็จเรียบร้อย ระบบจะแจ้งเตือนแพ็คเกจเน็ตผ่าน SMS เมื่อได้รับ SMS แล้วลูกค้าสามารถใช้งานเน็ตได้เลย</li>
         </ol>
       </div>
-      <button class="btn" onclick="payShopOnly('${p.id}')">ชำระค่าแพ็กเกจเน็ต →</button>
+ <button class="btn" onclick="payShopOnly('${p.id}')">ชำระค่าแพ็กเกจเน็ต</button>
       <button class="btn ghost" style="margin-top:10px" onclick="closeShopOnly()">ปิด</button>
     </div>`;
   document.body.appendChild(el);
