@@ -1534,7 +1534,7 @@ async function regSubmit() {
     render(screens.result(true, "บันทึกการลงทะเบียนซิมเรียบร้อยแล้ว ร้านจะตรวจสอบและติดต่อกลับ"));
   } catch (e) {
     btn.disabled = false;
-    btn.textContent = "📲 ลงทะเบียนซิม";
+    btn.textContent = "เข้าสู่ระบบลงทะเบียนซิม";
     showRegErr("บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
   }
 }
@@ -1872,7 +1872,7 @@ const screens = {
             <p class="reg-terms-note">หากไม่ยอมรับเงื่อนไข ทางร้านขอสงวนสิทธิ์ในการลงทะเบียนซิม และไม่สามารถกดปุ่มลงทะเบียนได้</p>
           </div>
           ${state.regCarrier === "truemove H"
-            ? `<button id="regGo" class="reg-btn green reg-link is-disabled" onclick="regToSerial()">ถัดไป: กรอกเลขซีเรียลซิม →</button>`
+            ? `<button id="regGo" class="reg-btn green reg-link is-disabled" onclick="regToSerial()">ยืนยันเลขซีเรียลซิม</button>`
             : (reg.url
               ? `<a id="regGo" class="reg-btn green reg-link is-disabled" href="${reg.url}" target="_blank" rel="noopener">ลงทะเบียนซิม</a>`
               : `<button class="reg-btn" disabled>ยังไม่ได้ตั้งลิงก์ลงทะเบียน</button>`)}
@@ -1900,7 +1900,7 @@ const screens = {
           <span>ซิมนี้ไม่มีเบอร์ (จะได้รับเบอร์หลังลงทะเบียนเสร็จทาง SMS)</span>
         </label>
         <div class="reg-err" id="regErr"></div>
-        <button class="reg-btn green" id="regSubmit" onclick="regNext()">📲 ลงทะเบียนซิม</button>
+        <button class="reg-btn green" id="regSubmit" onclick="regNext()">เข้าสู่ระบบลงทะเบียนซิม</button>
       </div>`;
       }
       if (mode === "scan") {
