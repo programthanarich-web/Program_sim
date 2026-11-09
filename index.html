@@ -1383,8 +1383,15 @@ function regPickMode(mode) {
   regScanStop();
   state.regMode = mode;
   if (mode !== "type") state.regScanOk = false;
+  if (mode === "scan") state.regCamConsent = false;
   render();
-  if (mode === "scan") regOpenCamera();
+}
+
+// ลูกค้ากดยอมรับก่อน จึงขอสิทธิ์กล้อง (ขอสิทธิ์จากการกดปุ่มของลูกค้าเอง)
+function regGrantCamera() {
+  state.regCamConsent = true;
+  render();
+  regOpenCamera();
 }
 
 async function regOpenCamera() {
@@ -1886,10 +1893,16 @@ const screens = {
         ${head}
         <div class="reg-sub">เล็งบาร์โค้ดบนซองซิมให้อยู่ในกรอบ ระบบจะกรอกเลขให้เอง</div>
         ${photoBlock("simBarcodeEx", "ตัวอย่างบาร์โค้ดบนซองซิม")}
+        ${state.regCamConsent ? `
         <div style="position:relative;border-radius:12px;overflow:hidden;background:#f4f7fc;border:1px solid var(--line);aspect-ratio:4/3;margin-top:10px">
           <video id="regVideo" playsinline muted style="width:100%;height:100%;object-fit:cover"></video>
           <div style="position:absolute;left:8%;right:8%;top:32%;height:36%;border:2px dashed rgba(11,94,215,.7);border-radius:10px;pointer-events:none"></div>
-        </div>
+        </div>` : `
+        <div style="border:1px solid var(--line);border-radius:12px;background:#fff;padding:16px;margin-top:10px;line-height:1.7">
+          <div style="font-weight:700;margin-bottom:6px">อนุญาตให้ใช้กล้องเพื่อสแกนบาร์โค้ด</div>
+          <div class="reg-sub" style="margin:0">ระบบจะใช้กล้องเพื่ออ่านบาร์โค้ดบนซองซิมเท่านั้น ไม่บันทึกรูปหรือวิดีโอ และปิดกล้องทันทีเมื่ออ่านเลขได้</div>
+          <button class="reg-btn" onclick="regGrantCamera()">อนุญาตและเปิดกล้อง</button>
+        </div>`}
         <div class="reg-err" id="regErr"></div>
         <button class="reg-btn" onclick="regPickMode('type')">สแกนไม่ได้ กรอกเลขเองแทน</button>
         <button class="reg-btn ghost" onclick="regPickMode('choose')">← ย้อนกลับ</button>
