@@ -1469,11 +1469,22 @@ async function regScanLoop() {
   tick();
 }
 
+// ติ๊กว่าซิมไม่มีเบอร์ = ปิดช่องเบอร์ (เบอร์จะได้รับทาง SMS หลังลงทะเบียนเสร็จ)
+function regToggleNoPhone(on) {
+  const inp = document.getElementById("regPhone");
+  if (inp) inp.disabled = on;
+}
+
 function regNext() {
   regScanStop();
   const serial = (document.getElementById("regSerial").value || "").replace(/\s/g, "");
   if (!/^\d{10,25}$/.test(serial)) { showRegErr("หมายเลข Serial ไม่ถูกต้อง (ตัวเลข 10-25 หลัก)"); return; }
+  const noPhone = !!(document.getElementById("regNoPhone") || {}).checked;
+  const phone = ((document.getElementById("regPhone") || {}).value || "").replace(/[-\s]/g, "").trim();
+  if (!noPhone && !/^0\d{8,9}$/.test(phone)) { showRegErr("กรุณากรอกเบอร์มือถือให้ถูกต้อง หรือติ๊กว่าซิมไม่มีเบอร์"); return; }
   state.regSerial = serial;
+  state.regNoPhone = noPhone;
+  state.regPhone = noPhone ? "" : phone;
   state.regScanOk = false;
   state.regStep = 2;
   render();
@@ -1482,7 +1493,7 @@ function regNext() {
 function regBackStep() {
   regScanStop();
   state.regStep = 1;
-  state.regMode = "type";
+  state.regMode = "choose";
   render();
 }
 
@@ -1495,7 +1506,7 @@ function regGoForm() {
 }
 
 async function regSubmit() {
-  const phone = (document.getElementById("regPhone").value || "").replace(/[-\s]/g, "").trim();
+  const phone = state.regNoPhone ? "" : (state.regPhone || "");
   if (phone && !/^0\d{8,9}$/.test(phone)) { showRegErr("เบอร์มือถือไม่ถูกต้อง"); return; }
   const btn = document.getElementById("regSubmit");
   btn.disabled = true;
@@ -1882,6 +1893,12 @@ const screens = {
         <label class="reg-label" for="regSerial">เลขซีเรียลซิม (18 หลัก)</label>
         <input id="regSerial" class="reg-inp mono" inputmode="numeric" placeholder="896604XXXXXXXXXXXX" value="${state.regSerial || ""}">
         <div class="reg-sub" style="margin-top:6px">พบเลขซีเรียลบนซองซิมการ์ด เริ่มต้นด้วย 8966</div>
+        <label class="reg-label" for="regPhone">เบอร์มือถือที่ต้องการลงทะเบียน</label>
+        <input id="regPhone" class="reg-inp" type="tel" inputmode="numeric" maxlength="12" placeholder="0812345678" value="${state.regPhone || ""}" ${state.regNoPhone ? "disabled" : ""}>
+        <label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:14px;cursor:pointer">
+          <input type="checkbox" id="regNoPhone" ${state.regNoPhone ? "checked" : ""} onchange="regToggleNoPhone(this.checked)" style="width:18px;height:18px">
+          <span>ซิมนี้ไม่มีเบอร์ (จะได้รับเบอร์หลังลงทะเบียนเสร็จทาง SMS)</span>
+        </label>
         <div class="reg-err" id="regErr"></div>
         <button class="reg-btn" onclick="regNext()">ถัดไป →</button>
       </div>`;
@@ -1928,8 +1945,7 @@ const screens = {
           <div class="reg-found-h">📦 รับ Serial แล้ว — กรอกเบอร์ที่ได้รับ</div>
           <div class="reg-kv"><span>Serial</span><b>${state.regSerial}</b></div>
         </div>
-        <label class="reg-label" for="regPhone">เบอร์โทรที่ได้รับ (ถ้ามี)</label>
-        <input id="regPhone" class="reg-inp" type="tel" inputmode="numeric" maxlength="12" placeholder="0812345678">
+        <div class="reg-kv" style="margin-top:8px"><span>เบอร์</span><b>${state.regNoPhone ? "ซิมไม่มีเบอร์ (รับเบอร์ทาง SMS)" : esc(state.regPhone)}</b></div>
         <div class="reg-err" id="regErr"></div>
         <p class="reg-terms-note">กดปุ่มด้านล่างเพื่อบันทึก Serial แล้วระบบจะเปิดหน้าลงทะเบียนของ ${title} ให้ทำต่อ</p>
         <button class="reg-btn green" id="regSubmit" onclick="regSubmit()">✅ บันทึกและไปหน้าลงทะเบียน</button>
