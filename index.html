@@ -1534,7 +1534,7 @@ async function regSubmit() {
     render(screens.result(true, "บันทึกการลงทะเบียนซิมเรียบร้อยแล้ว ร้านจะตรวจสอบและติดต่อกลับ"));
   } catch (e) {
     btn.disabled = false;
-    btn.textContent = "เข้าสู่ระบบลงทะเบียนซิม";
+    btn.textContent = "เข้าสู่ขั้นตอนลงทะเบียนซิม";
     showRegErr("บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
   }
 }
@@ -1888,7 +1888,7 @@ const screens = {
         <div class="reg-sub">เลือกวิธีใส่เลข Serial ที่อยู่บนซองซิม</div>
         ${photoBlock("simNumberEx", "ตัวอย่างหมายเลขซีเรียลซิม")}
         <div class="reg-tabs">
-          <button class="reg-tab active" type="button">⌨️ กรอกตัวเลข</button>
+          <button class="reg-tab active" type="button">⌨️ ยืนยันเลขซีเรียลซิม</button>
         </div>
         <label class="reg-label" for="regSerial">เลขซีเรียลซิม (18 หลัก)</label>
         <input id="regSerial" class="reg-inp mono" inputmode="numeric" maxlength="18" oninput="this.value=this.value.replace(/\D/g,'').slice(0,18)" placeholder="896604XXXXXXXXXXXX" value="${state.regSerial || ""}">
@@ -1897,10 +1897,10 @@ const screens = {
         <input id="regPhone" class="reg-inp" type="tel" inputmode="numeric" maxlength="12" placeholder="0812345678" value="${state.regPhone || ""}" ${state.regNoPhone ? "disabled" : ""}>
         <label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:14px;cursor:pointer">
           <input type="checkbox" id="regNoPhone" ${state.regNoPhone ? "checked" : ""} onchange="regToggleNoPhone(this.checked)" style="width:18px;height:18px">
-          <span>ซิมนี้ไม่มีเบอร์ (จะได้รับเบอร์หลังลงทะเบียนเสร็จทาง SMS)</span>
+          <span>ซิมยังไม่มีเบอร์ (จะได้รับเบอร์หลังลงทะเบียนเสร็จทาง SMS)</span>
         </label>
         <div class="reg-err" id="regErr"></div>
-        <button class="reg-btn green" id="regSubmit" onclick="regNext()">เข้าสู่ระบบลงทะเบียนซิม</button>
+        <button class="reg-btn green" id="regSubmit" onclick="regNext()">เข้าสู่ขั้นตอนลงทะเบียนซิม</button>
       </div>`;
       }
       if (mode === "scan") {
