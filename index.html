@@ -1511,27 +1511,23 @@ async function regSubmit() {
   btn.disabled = true;
   btn.textContent = "กำลังบันทึก...";
   const regUrl = ((CONFIG.carrierRegister || {})[state.regCarrier] || {}).url || "";
-  // เปิดแท็บใหม่ตอนผู้ใช้กดปุ่ม (ก่อนรอผลบันทึก) เพื่อไม่ให้ตัวบล็อกป็อปอัปปิดหน้า
-  const tab = regUrl ? window.open("about:blank", "_blank") : null;
   try {
     const r = await postJSON(CONFIG.BACKEND_ENDPOINT, {
       serial: state.regSerial, phone,
       package: carrierLabel(state.regCarrier), amount: 0, time: new Date().toISOString()
     });
     if (!r || !r.ok) throw new Error("save failed");
+    clearSavedState();
     if (regUrl) {
-      if (tab) tab.location.href = regUrl;
-      else window.location.href = regUrl;
+      // บันทึกแล้ว พาลูกค้าไปหน้าลงทะเบียนจริงของทรูในหน้าเดียวกันทันที
+      window.location.href = regUrl;
+      return;
     }
     state.regStep = 1;
     state.regSerial = "";
     history_ = ["home"];
-    clearSavedState();
-    render(screens.result(true, regUrl
-      ? "บันทึก Serial เรียบร้อยแล้ว กรุณาทำการลงทะเบียนซิมต่อในหน้าที่เปิดขึ้น"
-      : "บันทึกการลงทะเบียนซิมเรียบร้อยแล้ว ร้านจะตรวจสอบและติดต่อกลับ"));
+    render(screens.result(true, "บันทึกการลงทะเบียนซิมเรียบร้อยแล้ว ร้านจะตรวจสอบและติดต่อกลับ"));
   } catch (e) {
-    if (tab) { try { tab.close(); } catch (err) {} }
     btn.disabled = false;
     btn.textContent = "📲 ลงทะเบียนซิม";
     showRegErr("บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
@@ -1887,7 +1883,7 @@ const screens = {
         <div class="reg-sub">เลือกวิธีใส่เลข Serial ที่อยู่บนซองซิม</div>
         ${photoBlock("simNumberEx", "ตัวอย่างหมายเลขซีเรียลซิม")}
         <div class="reg-tabs">
-          <button class="reg-tab active" type="button">⌨️ ยืนยันเลขซีเรียลซิม</button>
+          <button class="reg-tab active" type="button">⌨️ กรอกตัวเลข</button>
         </div>
         <label class="reg-label" for="regSerial">เลขซีเรียลซิม (18 หลัก)</label>
         <input id="regSerial" class="reg-inp mono" inputmode="numeric" placeholder="896604XXXXXXXXXXXX" value="${state.regSerial || ""}">
