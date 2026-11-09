@@ -699,12 +699,25 @@ function openMyOrder(id, status) {
 function rejectResultScreen(orderId, knownReason) {
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const show = reason => {
-    const msg = reason
-      ? '<span style="display:block;font-size:13px;color:#64748b">สาเหตุ</span>'
-        + '<span style="display:block;font-size:20px;font-weight:700;color:#b91c1c;line-height:1.5;margin:4px 0 10px">' + esc(reason) + '</span>'
-        + '<span style="display:block;font-size:14px">กรุณาติดต่อร้านค้า</span>'
-      : "ไม่สามารถดำเนินการสมัครได้ กรุณาติดต่อร้านค้า";
-    render(screens.result(false, msg, true));
+    hero.classList.add("hidden");
+    const reasonBox = reason
+      ? `<div style="text-align:left;background:#f9fafb;border:1px solid #e5e7eb;border-left:3px solid #991b1b;border-radius:12px;padding:14px 16px;margin:0 0 14px">
+           <div style="font-size:12px;color:#6b7280;margin-bottom:6px">สาเหตุ</div>
+           <div style="font-size:16px;font-weight:600;color:#111827;line-height:1.6">${esc(reason)}</div>
+         </div>`
+      : "";
+    const lineBtn = CONFIG.lineContactUrl
+      ? `<a href="${CONFIG.lineContactUrl}" target="_blank" rel="noopener" style="display:inline-block;padding:9px 22px;border:1.5px solid #06c755;color:#06c755;border-radius:999px;font-size:14px;font-weight:600;text-decoration:none">ติดต่อร้านทาง LINE</a>`
+      : "";
+    render(`
+      <div class="card result" style="padding:26px 18px 20px">
+        <div style="width:56px;height:56px;margin:0 auto 12px;border-radius:50%;background:#fef2f2;color:#991b1b;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:300">✕</div>
+        <h2 style="margin:0 0 16px;font-size:18px;font-weight:700;color:#111827">ดำเนินการไม่สำเร็จ</h2>
+        ${reasonBox}
+        <p style="font-size:14px;color:#6b7280;margin:0 0 16px">กรุณาติดต่อร้านค้าเพื่อดำเนินการต่อ</p>
+        ${lineBtn}
+        <div style="margin-top:14px"><button onclick="resetTo('home')" style="background:none;border:none;color:#2563eb;font-size:14px;font-weight:600;cursor:pointer">กลับหน้าหลัก</button></div>
+      </div>`);
   };
   if (knownReason !== undefined) return show(knownReason);
   fetch(API_BASE + "/orders/status?id=" + encodeURIComponent(orderId), { cache: "no-store" })
