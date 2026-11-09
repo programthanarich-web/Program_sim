@@ -2187,16 +2187,6 @@ const screens = {
     hero.classList.add("hidden");
     return `
       <div class="card">
-        <div class="pk-head">
-          <div class="pk-title">
-            <span class="pk-gift">🎁</span>
-            <div>
-              <h2>แพ็กเกจที่ให้บริการ</h2>
-              <div class="pk-sub">เลือกแพ็กเกจที่ใช่ สำหรับคุณ</div>
-            </div>
-          </div>
-          <span class="pk-more">ดูรายละเอียดทั้งหมด →</span>
-        </div>
         ${planCardsHtml(PACKAGES.filter(p => !p.month2 && !p.simAge && carrierOf(p) === netCarrierKey() && (state.mode !== "shop" || p.shopVisible)))}
       </div>`;
   },
