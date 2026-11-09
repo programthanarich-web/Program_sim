@@ -982,6 +982,11 @@ const sendToLine = payload => postJSON(CONFIG.LINE_ENDPOINT, { message: payload 
 // เลือกเครือข่ายก่อนสมัครแพ็กเกจเน็ต แล้วไปหน้าเลือกเติมเงินเอง / กับทางร้าน
 function pickNetCarrier(key) {
   state.netCarrier = key;
+  // AIS / dtac ไม่มีเมนูเลือกแบบ: กรอกเบอร์แล้วเลือกแพ็กเกจได้เลย
+  if (key !== "truemove H") {
+    startFlow("self");
+    return;
+  }
   go("net-menu");
 }
 
@@ -1867,7 +1872,7 @@ const screens = {
             <p class="reg-terms-note">หากไม่ยอมรับเงื่อนไข ทางร้านขอสงวนสิทธิ์ในการลงทะเบียนซิม และไม่สามารถกดปุ่มลงทะเบียนได้</p>
           </div>
           ${state.regCarrier === "truemove H"
-            ? `<button id="regGo" class="reg-btn green reg-link is-disabled" onclick="regToSerial()"> ยืนยันเลขซีเรียลซิม →</button>`
+            ? `<button id="regGo" class="reg-btn green reg-link is-disabled" onclick="regToSerial()">ถัดไป: กรอกเลขซีเรียลซิม →</button>`
             : (reg.url
               ? `<a id="regGo" class="reg-btn green reg-link is-disabled" href="${reg.url}" target="_blank" rel="noopener">ลงทะเบียนซิม</a>`
               : `<button class="reg-btn" disabled>ยังไม่ได้ตั้งลิงก์ลงทะเบียน</button>`)}
@@ -1883,19 +1888,19 @@ const screens = {
         <div class="reg-sub">เลือกวิธีใส่เลข Serial ที่อยู่บนซองซิม</div>
         ${photoBlock("simNumberEx", "ตัวอย่างหมายเลขซีเรียลซิม")}
         <div class="reg-tabs">
-          <button class="reg-tab active" type="button"> ยืนยันเลขซีเรียลซิม </button>
+          <button class="reg-tab active" type="button">⌨️ กรอกตัวเลข</button>
         </div>
-        <label class="reg-label" for="regSerial">กรอกเลขซีเรียลซิม (18 หลัก)</label>
+        <label class="reg-label" for="regSerial">เลขซีเรียลซิม (18 หลัก)</label>
         <input id="regSerial" class="reg-inp mono" inputmode="numeric" maxlength="18" oninput="this.value=this.value.replace(/\D/g,'').slice(0,18)" placeholder="896604XXXXXXXXXXXX" value="${state.regSerial || ""}">
-        <div class="reg-sub" style="margin-top:6px">เลขซีเรียลอยู่บนซองซิมการ์ด เริ่มต้นด้วย 8966</div>
-        <label class="reg-label" for="regPhone">กรอกเบอร์มือถือที่ต้องการลงทะเบียน</label>
+        <div class="reg-sub" style="margin-top:6px">พบเลขซีเรียลบนซองซิมการ์ด เริ่มต้นด้วย 8966</div>
+        <label class="reg-label" for="regPhone">เบอร์มือถือที่ต้องการลงทะเบียน</label>
         <input id="regPhone" class="reg-inp" type="tel" inputmode="numeric" maxlength="12" placeholder="0812345678" value="${state.regPhone || ""}" ${state.regNoPhone ? "disabled" : ""}>
         <label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-size:14px;cursor:pointer">
           <input type="checkbox" id="regNoPhone" ${state.regNoPhone ? "checked" : ""} onchange="regToggleNoPhone(this.checked)" style="width:18px;height:18px">
-          <span>ซิมยังไม่มีเบอร์ (จะได้รับเบอร์หลังลงทะเบียนเสร็จทาง SMS)</span>
+          <span>ซิมนี้ไม่มีเบอร์ (จะได้รับเบอร์หลังลงทะเบียนเสร็จทาง SMS)</span>
         </label>
         <div class="reg-err" id="regErr"></div>
-        <button class="reg-btn green" id="regSubmit" onclick="regNext()"> ลงทะเบียนซิม </button>
+        <button class="reg-btn green" id="regSubmit" onclick="regNext()">📲 ลงทะเบียนซิม</button>
       </div>`;
       }
       if (mode === "scan") {
