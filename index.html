@@ -1390,13 +1390,23 @@ function regPickMode(mode) {
 async function regOpenCamera() {
   const v = document.getElementById("regVideo");
   if (!v) return;
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    return regFail("เครื่องนี้เปิดกล้องไม่ได้ กรุณากรอกเลขซีเรียลเอง");
+  if (!window.isSecureContext || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    return regFail("เบราว์เซอร์นี้เปิดกล้องไม่ได้ (ต้องเปิดเว็บผ่าน https และใช้ Chrome/Safari ล่าสุด) กรุณากรอกเลขซีเรียลเอง");
   }
   try {
-    regScanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
-  } catch (e) {
-    return regFail("เปิดกล้องไม่ได้ กรุณาอนุญาตการใช้กล้อง หรือกรอกเลขซีเรียลเอง");
+    // กล้องหลังก่อน (มือถือ) ถ้าไม่มีให้ใช้กล้องใดก็ได้ (โน้ตบุ๊ก)
+    regScanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+  } catch (e1) {
+    try {
+      regScanStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    } catch (e2) {
+      const n = (e2 && e2.name) || "";
+      const why = (n === "NotAllowedError" || n === "SecurityError") ? "ยังไม่ได้อนุญาตใช้กล้อง (กดไอคอนกุญแจหรือกล้องบนแถบที่อยู่ แล้วเลือกอนุญาต จากนั้นกดสแกนใหม่)"
+        : n === "NotFoundError" ? "ไม่พบกล้องในเครื่องนี้"
+        : n === "NotReadableError" ? "กล้องกำลังถูกใช้งานโดยแอปอื่น ให้ปิดแอปนั้นก่อน"
+        : "เปิดกล้องไม่ได้";
+      return regFail(`${why} กรุณากรอกเลขซีเรียลเอง`);
+    }
   }
   v.srcObject = regScanStream;
   await v.play().catch(() => {});
@@ -1417,7 +1427,7 @@ async function regScanLoop() {
       zx.setHints(hints);
     } catch (e) { zx = null; }
   }
-  if (!detector && !zx) return regFail("เครื่องนี้สแกนไม่ได้ กรุณากรอกเลขซีเรียลเอง");
+  if (!detector && !zx) return regFail("โหลดตัวอ่านบาร์โค้ดไม่สำเร็จ (ตรวจสอบอินเทอร์เน็ต แล้วลองใหม่) กรุณากรอกเลขซีเรียลเอง");
   const v = document.getElementById("regVideo");
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
@@ -1844,7 +1854,7 @@ const screens = {
             <p class="reg-terms-note">หากไม่ยอมรับเงื่อนไข ทางร้านขอสงวนสิทธิ์ในการลงทะเบียนซิม และไม่สามารถกดปุ่มลงทะเบียนได้</p>
           </div>
           ${state.regCarrier === "truemove H"
-            ? `<button id="regGo" class="reg-btn green reg-link is-disabled" onclick="regToSerial()"> ยืนยันเลขซีเรียลซิม →</button>`
+            ? `<button id="regGo" class="reg-btn green reg-link is-disabled" onclick="regToSerial()">ถัดไป: กรอกเลขซีเรียลซิม →</button>`
             : (reg.url
               ? `<a id="regGo" class="reg-btn green reg-link is-disabled" href="${reg.url}" target="_blank" rel="noopener">ลงทะเบียนซิม</a>`
               : `<button class="reg-btn" disabled>ยังไม่ได้ตั้งลิงก์ลงทะเบียน</button>`)}
@@ -1865,9 +1875,9 @@ const screens = {
         </div>
         <label class="reg-label" for="regSerial">เลขซีเรียลซิม (18 หลัก)</label>
         <input id="regSerial" class="reg-inp mono" inputmode="numeric" placeholder="896604XXXXXXXXXXXX" value="${state.regSerial || ""}">
-        <div class="reg-sub" style="margin-top:6px">ซีเรียลบนซองซิมการ์ดหรือบนตัวซิม เริ่มต้นด้วย 8966</div>
+        <div class="reg-sub" style="margin-top:6px">พบเลขซีเรียลบนซองซิมการ์ด เริ่มต้นด้วย 8966</div>
         <div class="reg-err" id="regErr"></div>
-        <button class="reg-btn" onclick="regNext()">ลงทะเบียนซิม →</button>
+        <button class="reg-btn" onclick="regNext()">ถัดไป →</button>
       </div>`;
       }
       if (mode === "scan") {
