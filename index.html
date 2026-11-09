@@ -1510,6 +1510,10 @@ function regGoForm() {
 }
 
 async function regSubmit() {
+  // ต้องมีเลขซีเรียล 18 หลักทุกครั้ง ไม่เช่นนั้นระบบแจ้งพาร์ทเนอร์ไม่ได้
+  const serialNow = String(state.regSerial || (document.getElementById("regSerial") || {}).value || "").replace(/\s/g, "");
+  if (!/^\d{18}$/.test(serialNow)) { showRegErr("กรุณากรอกเลขซีเรียลซิม 18 หลักก่อนลงทะเบียน"); return; }
+  state.regSerial = serialNow;
   const phone = state.regNoPhone ? "" : (state.regPhone || "");
   if (phone && !/^0\d{8,9}$/.test(phone)) { showRegErr("เบอร์มือถือไม่ถูกต้อง"); return; }
   const btn = document.getElementById("regSubmit") || { disabled: false, textContent: "" };
@@ -2917,14 +2921,7 @@ async function submitPayment() {
       render(screens.result(false, created.error, true));
       return;
     }
-    // แจ้งไลน์ร้านเป็นเรื่องรอง ถ้าพลาดไม่ควรทำให้ลูกค้าเห็นว่าชำระไม่สำเร็จ
-    try {
-      await sendToLine({
-        type: "ชำระเงินสำเร็จ", serial: state.serial, phone: state.phone, package: state.pkg.name,
-        lineName: state.lineUser ? state.lineUser.displayName : "-",
-        lineUserId: state.lineUser ? state.lineUser.userId : ""
-      });
-    } catch (e) { /* ข้าม */ }
+    // ไม่แจ้งไลน์ซ้ำจากหน้าบ้านแล้ว (ระบบตรวจสอบออเดอร์แจ้งเตือนแอดมินแทน)
     history_ = ["home"];
     clearSavedState();
     if (created && created.id) {
