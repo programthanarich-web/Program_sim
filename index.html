@@ -700,7 +700,9 @@ function rejectResultScreen(orderId, knownReason) {
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const show = reason => {
     const msg = reason
-      ? "ไม่สามารถดำเนินการสมัครได้<br><b>สาเหตุ:</b> " + esc(reason) + "<br>กรุณาติดต่อร้านค้า"
+      ? '<span style="display:block;font-size:13px;color:#64748b">สาเหตุ</span>'
+        + '<span style="display:block;font-size:20px;font-weight:700;color:#b91c1c;line-height:1.5;margin:4px 0 10px">' + esc(reason) + '</span>'
+        + '<span style="display:block;font-size:14px">กรุณาติดต่อร้านค้า</span>'
       : "ไม่สามารถดำเนินการสมัครได้ กรุณาติดต่อร้านค้า";
     render(screens.result(false, msg, true));
   };
