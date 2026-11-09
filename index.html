@@ -1844,7 +1844,7 @@ const screens = {
             <p class="reg-terms-note">หากไม่ยอมรับเงื่อนไข ทางร้านขอสงวนสิทธิ์ในการลงทะเบียนซิม และไม่สามารถกดปุ่มลงทะเบียนได้</p>
           </div>
           ${state.regCarrier === "truemove H"
-            ? `<button id="regGo" class="reg-btn green reg-link is-disabled" onclick="regToSerial()">ถัดไป: กรอกเลขซีเรียลซิม →</button>`
+            ? `<button id="regGo" class="reg-btn green reg-link is-disabled" onclick="regToSerial()"> ยืนยันเลขซีเรียลซิม →</button>`
             : (reg.url
               ? `<a id="regGo" class="reg-btn green reg-link is-disabled" href="${reg.url}" target="_blank" rel="noopener">ลงทะเบียนซิม</a>`
               : `<button class="reg-btn" disabled>ยังไม่ได้ตั้งลิงก์ลงทะเบียน</button>`)}
@@ -1865,9 +1865,9 @@ const screens = {
         </div>
         <label class="reg-label" for="regSerial">เลขซีเรียลซิม (18 หลัก)</label>
         <input id="regSerial" class="reg-inp mono" inputmode="numeric" placeholder="896604XXXXXXXXXXXX" value="${state.regSerial || ""}">
-        <div class="reg-sub" style="margin-top:6px">พบเลขซีเรียลบนซองซิมการ์ด เริ่มต้นด้วย 8966</div>
+        <div class="reg-sub" style="margin-top:6px">ซีเรียลบนซองซิมการ์ดหรือบนตัวซิม เริ่มต้นด้วย 8966</div>
         <div class="reg-err" id="regErr"></div>
-        <button class="reg-btn" onclick="regNext()">ถัดไป →</button>
+        <button class="reg-btn" onclick="regNext()">ลงทะเบียนซิม →</button>
       </div>`;
       }
       if (mode === "scan") {
