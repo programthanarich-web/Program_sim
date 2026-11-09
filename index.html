@@ -1842,12 +1842,12 @@ const screens = {
           <ol>
             <li>กรอกเบอร์มือถือ</li>
             <li>เลือกแพ็กเกจที่ต้องการ</li>
-            <li>กดปุ่ม "ยืนยันข้อมูล"</li>
+            <li>กดปุ่ม "เลือกแพ็คเกจเน็ต"</li>
           </ol>
         </div>
 
         <div class="err" id="formErr"></div>
-        <button class="btn" id="simSubmit" onclick="submitSim()">ยืนยันข้อมูล →</button>
+        <button class="btn" id="simSubmit" onclick="submitSim()">เลือกแพ็คเกจเน็ต →</button>
         <button class="btn ghost" style="margin-top:10px" onclick="goBack()">ย้อนกลับ</button>
       </div>`;
   },
@@ -2561,7 +2561,7 @@ async function submitSim() {
     err.textContent = "ส่งข้อมูลไม่สำเร็จ: " + e.message;
     err.style.display = "block";
     btn.disabled = false;
-    btn.textContent = "ยืนยันข้อมูล →";
+    btn.textContent = "เลือกแพ็คเกจเน็ต →";
   }
 }
 
