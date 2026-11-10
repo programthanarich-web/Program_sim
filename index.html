@@ -202,8 +202,14 @@
   .plan-feat li::before{content:"✓";position:absolute;left:0;top:4px;color:var(--c);font-weight:800}
   .plan-btn{width:100%;border:0;border-radius:12px;background:var(--c);color:#fff;font-weight:700;font-size:15px;padding:12px;cursor:pointer}
   .plan-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:stretch}
+  .plan-more{margin:6px 0 4px}
+  .plan-more summary{list-style:none;cursor:pointer;color:var(--c);font-weight:700;font-size:13px;padding:6px 0;border-top:1px dashed var(--line)}
+  .plan-more summary::-webkit-details-marker{display:none}
+  .plan-more summary::after{content:" +";font-size:15px}
+  .plan-more[open] summary::after{content:" −"}
+  .plan-more[open] summary{margin-bottom:4px}
+  .plan-grid .plan-speed{font-size:17px;line-height:1.35;min-height:46px}
   .plan-grid .plan{margin:14px 0 4px;padding:14px 10px 10px;display:flex;flex-direction:column}
-  .plan-grid .plan-speed{font-size:19px}
   .plan-grid .plan-desc{font-size:12px;min-height:34px}
   .plan-grid .plan-price{font-size:20px}
   .plan-grid .plan-price small{font-size:11px}
@@ -947,12 +953,15 @@ function planCardsHtml(list) {
     <div class="plan" style="--c:${p.color || "#0b5ed7"}">
       ${p.badge ? `<span class="plan-badge">${p.badge}</span>` : ""}
       <div class="plan-speed">${p.speed || p.name}</div>
-      <div class="plan-desc">${p.desc || ""}</div>
       ${priceHtml}
-      <ul class="plan-feat">
-        ${(p.features || []).map(f => `<li>${f}</li>`).join("")}
-      </ul>
- <button class="plan-btn" onclick="selectPackage('${p.id}')">สมัครแพ็กเกจเน็ต</button>
+      <details class="plan-more">
+        <summary>ดูรายละเอียด</summary>
+        ${p.desc ? `<div class="plan-desc">${p.desc}</div>` : ""}
+        <ul class="plan-feat">
+          ${(p.features || []).map(f => `<li>${f}</li>`).join("")}
+        </ul>
+      </details>
+      <button class="plan-btn" onclick="selectPackage('${p.id}')">สมัครแพ็กเกจเน็ต</button>
     </div>`;
   }).join("");
   return `<div class="plan-grid">${cards}</div>`;
