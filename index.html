@@ -968,7 +968,7 @@ function planCardsHtml(list) {
     return `
     <div class="pk-card" style="--c:${p.color || "#0b5ed7"}">
       ${p.badge ? `<span class="pk-badge">${p.badge}</span>` : ""}
-      <div class="pk-title">${p.speed ? "แพ็กเกจ " + p.speed : p.name}</div>
+      <div class="pk-title">${p.name || p.speed || ""}</div>
       ${p.desc ? `<div class="pk-band">${p.desc}</div>` : ""}
       <div class="pk-price">เดือนละ ${p.price} บาท</div>
       ${firstTxt ? `<div class="pk-first">${firstTxt}</div>` : ""}
