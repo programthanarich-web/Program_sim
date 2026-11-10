@@ -201,6 +201,17 @@
   .plan-feat li{font-size:14px;color:var(--text);padding:4px 0 4px 24px;position:relative}
   .plan-feat li::before{content:"✓";position:absolute;left:0;top:4px;color:var(--c);font-weight:800}
   .plan-btn{width:100%;border:0;border-radius:12px;background:var(--c);color:#fff;font-weight:700;font-size:15px;padding:12px;cursor:pointer}
+  .plan-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:stretch}
+  .plan-grid .plan{margin:14px 0 4px;padding:14px 10px 10px;display:flex;flex-direction:column}
+  .plan-grid .plan-speed{font-size:19px}
+  .plan-grid .plan-desc{font-size:12px;min-height:34px}
+  .plan-grid .plan-price{font-size:20px}
+  .plan-grid .plan-price small{font-size:11px}
+  .plan-grid .plan-feat{margin:8px 0 10px;flex:1}
+  .plan-grid .plan-feat li{font-size:12px;padding:3px 0 3px 18px}
+  .plan-grid .plan-feat li::before{top:3px}
+  .plan-grid .plan-btn{font-size:13px;padding:10px 6px;margin-top:auto}
+  .plan-grid .plan-badge{font-size:11px;padding:2px 9px}
 
   /* ---------- หัวข้อแพ็กเกจ ---------- */
   .pk-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:4px}
@@ -922,7 +933,7 @@ function shopDiscountInfo(p) {
 // การ์ดแพ็กเกจ (ใช้ทั้งเมนูเดือนแรกและเมนูเดือนที่ 2)
 function planCardsHtml(list) {
   const isShop = state.mode === "shop";
-  return list.map(p => {
+  const cards = list.map(p => {
     const info = shopDiscountInfo(p);
     const base = firstPriceOf(p);
     const net = base - info.amount;
@@ -944,6 +955,7 @@ function planCardsHtml(list) {
  <button class="plan-btn" onclick="selectPackage('${p.id}')">สมัครแพ็กเกจเน็ต</button>
     </div>`;
   }).join("");
+  return `<div class="plan-grid">${cards}</div>`;
 }
 
 // ถ้าหลังบ้านตั้ง "รูปหัวเว็บ" ไว้ จะแสดงรูปนั้นแทนหัวข้อแบบข้อความ
@@ -2536,9 +2548,10 @@ function showQRModal(url) {
 
 // LINE LIFF: เปิดเว็บจากแอป LINE ได้ ถ้ายังไม่ได้ใส่ LIFF ID ในหลังบ้าน ระบบจะทำงานเป็นเว็บปกติ
 async function initLiff() {
-  if (!CONFIG.liffId || typeof liff === "undefined") return;
+  const liffId = CONFIG.liffId || "2010376157-7Fz6A4bg"; // ถ้าหลังบ้านปล่อยว่าง จะใช้ค่านี้
+  if (typeof liff === "undefined") return;
   try {
-    await liff.init({ liffId: CONFIG.liffId });
+    await liff.init({ liffId });
     if (liff.isLoggedIn()) {
       const p = await liff.getProfile();
       state.lineUser = { userId: p.userId, displayName: p.displayName };
