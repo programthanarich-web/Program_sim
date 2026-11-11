@@ -2331,12 +2331,12 @@ const screens = {
     const p = state.pkg;
     return `
       <div class="card">
+        <b style="font-size:14px">ขั้นตอนการสมัคร</b>
+        <ol class="steps">${(carrierOf(p) === "truemove H" ? SELF_STEPS : ((CONFIG.SELF_STEPS_BY || {})[carrierOf(p)] || [])).map(s => `<li>${s}</li>`).join("") || "<li>ยังไม่ได้ตั้งขั้นตอนสมัครของเครือข่ายนี้</li>"}</ol>
         ${p.code ? `<div class="code-box">
           <small>รหัสสมัครเน็ต</small>
           <div class="code">${p.code}</div>
         </div>` : ""}
-        <b style="font-size:14px">ขั้นตอนการสมัคร</b>
-        <ol class="steps">${(carrierOf(p) === "truemove H" ? SELF_STEPS : ((CONFIG.SELF_STEPS_BY || {})[carrierOf(p)] || [])).map(s => `<li>${s}</li>`).join("") || "<li>ยังไม่ได้ตั้งขั้นตอนสมัครของเครือข่ายนี้</li>"}</ol>
         <button class="btn ghost" onclick="resetTo('home')">กลับหน้าหลัก</button>
       </div>`;
   },
@@ -2729,13 +2729,17 @@ function showShopOnlyPopup(p) {
       <button class="btn" onclick="payShopOnly('${p.id}')">ไปแนบรูปคำสั่งซื้อและชำระเงิน</button>`;
   } else {
     form = `
-      <label class="field-label" for="shopeeSn" style="margin-top:6px">หมายเลขคำสั่งซื้อ Shopee <span class="req">*</span></label>
-      <input id="shopeeSn" type="text" autocomplete="off" placeholder="กรอกหมายเลขคำสั่งซื้อจาก Shopee" value="${esc(state.lastShopeeSn || "")}"
-             style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #cbd5e1;border-radius:12px;font-size:16px">
+      <div style="margin-top:10px;padding:10px 12px;border-radius:12px;background:#f1f5f9;text-align:left">
+        <div style="font-weight:800;color:#0b5ed7;font-size:15px">แพ็กเกจ ${esc(p.name)}</div>
+        <div style="font-size:12px;color:#64748b;margin-top:2px">จำกัดสิทธิ์เฉพาะลูกค้าที่สั่งซื้อเท่านั้น</div>
+      </div>
       ${CONFIG.shopeeSample ? `<div class="m2-sample" style="margin-top:12px">
         <div class="m2-sample-h">ตัวอย่างคำสั่งซื้อบน Shopee (หมายเลขอยู่ตรงนี้)</div>
         <img src="${CONFIG.shopeeSample}" alt="ตัวอย่างคำสั่งซื้อ Shopee">
       </div>` : ""}
+      <label class="field-label" for="shopeeSn" style="margin-top:10px">กรุณากรอก หมายเลขคำสั่งซื้อ <span class="req">*</span> เพื่อตรวจสอบแพ็กเกจที่สั่งซื้อ</label>
+      <input id="shopeeSn" type="text" autocomplete="off" placeholder="กรอกหมายเลขคำสั่งซื้อ" value="${esc(state.lastShopeeSn || "")}"
+             style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #cbd5e1;border-radius:12px;font-size:16px">
       <div class="err" id="shopeeErr" style="display:none"></div>
       <div id="shopeeChoices"></div>
       <button class="btn" id="shopeeBtn" style="margin-top:10px" onclick="checkShopeeOrder('${p.id}')">ตรวจสอบคำสั่งซื้อ</button>`;
