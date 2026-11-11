@@ -222,7 +222,8 @@
   .pk-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:stretch;margin-top:12px}
   .so-box .pk-grid{grid-template-columns:1fr}
   @keyframes pkBlink{0%,100%{box-shadow:0 0 0 0 rgba(11,94,215,0)}50%{box-shadow:0 0 0 6px rgba(11,94,215,.55)}}
-  .pk-card.pk-blink{animation:pkBlink .6s ease-in-out 5}
+  .pk-card.pk-blink{animation:pkBlink 1.2s ease-in-out infinite}
+  .pk-match{background:#dcfce7;color:#166534;font-size:12px;font-weight:700;line-height:1.45;padding:7px 9px;margin:6px 10px 0;border-radius:10px}
   .pk-card{position:relative;border:2px solid var(--c);border-radius:18px;padding:22px 0 14px;background:#fff;display:flex;flex-direction:column;text-align:center;overflow:visible}
   .pk-badge{position:absolute;top:-12px;left:10px;background:#e53935;color:#fff;font-size:11px;font-weight:700;padding:3px 12px;border-radius:99px;white-space:nowrap}
   .pk-title{font-size:19px;font-weight:800;color:#e53935;line-height:1.3;padding:6px 8px 0}
@@ -968,9 +969,11 @@ function planCardsHtml(list, action = "selectPackage") {
     const firstTxt = hasFirst ? `สมัครเน็ตเดือนแรก ${isShop ? net : base} บาท` : "";
     const shopOff = isShop && info.amount ? `<span class="pk-off">ส่วนลดร้าน ${info.label}</span>` : "";
     const feats = (p.features || []).map(f => `<li>${f}</li>`).join("");
+    const matched = (state.matchedPkgIds || []).includes(p.id);
     return `
-    <div class="pk-card" data-pid="${p.id}" style="--c:${p.color || "#0b5ed7"}">
+    <div class="pk-card${matched ? " pk-blink" : ""}" data-pid="${p.id}" style="--c:${p.color || "#0b5ed7"}">
       ${p.badge ? `<span class="pk-badge">${p.badge}</span>` : ""}
+      ${matched ? `<div class="pk-match">✅ แพ็กเกจนี้ตรงตามคำสั่งซื้อ Shopee ที่คุณสั่งซื้อ กดสมัครแพ็กเกจนี้ได้เลย</div>` : ""}
       <div class="pk-title">${p.name || p.speed || ""}</div>
       ${p.desc ? `<div class="pk-band">${p.desc}</div>` : ""}
       <div class="pk-price">เดือนละ ${p.price} บาท</div>
@@ -2676,6 +2679,7 @@ async function submitSim() {
 
 // เลือกแพ็กเกจจากหน้าสมัครเน็ต: ถ้าต้องสมัครกับทางร้าน ขึ้นป๊อปอัปให้ชำระเงิน / ถ้าสมัครเองได้ แสดงรหัสสมัครเลย
 function selectNetPackage(id) {
+  state.matchedPkgIds = null;
   const p = PACKAGES.find(x => x.id === id);
   state.pkg = p;
   state.coupon = null;
@@ -2790,8 +2794,10 @@ async function checkShopeeOrder(pid) {
     if (alts.length) {
       // พบแพ็กเกจที่ตรงกับคำสั่งซื้อ: ปิดป๊อปอัป แล้วเด้งไปที่รายการแพ็กเกจและทำให้การ์ดนั้นกระพริบ
       state.lastShopeeSn = sn;
+      state.matchedPkgIds = alts.map(x => x.id);
       closeShopOnly();
-      highlightPackages(alts.map(x => x.id));
+      render();
+      setTimeout(() => highlightPackages(state.matchedPkgIds), 60);
       return;
     }
     choices.innerHTML = `<div class="err" style="display:block;color:#b42318">แพ็กเกจที่คุณเลือกไม่ตรงกับคำสั่งซื้อ Shopee ของคุณ<br><b>คุณสั่งซื้อ:</b> ${esc(itemText)}</div>
@@ -2804,18 +2810,10 @@ async function checkShopeeOrder(pid) {
   }
 }
 
-// เด้งไปที่การ์ดแพ็กเกจแล้วให้กระพริบ (ใช้เมื่อคำสั่งซื้อ Shopee ตรงกับแพ็กเกจอื่น)
+// เลื่อนไปที่การ์ดแพ็กเกจที่ตรงกับคำสั่งซื้อ (การ์ดกระพริบอยู่แล้วจากการ render)
 function highlightPackages(ids) {
-  let first = null;
-  ids.forEach(id => {
-    const el = document.querySelector(`[data-pid="${id}"]`);
-    if (!el) return;
-    if (!first) first = el;
-    el.classList.remove("pk-blink");
-    void el.offsetWidth;
-    el.classList.add("pk-blink");
-  });
-  if (first) first.scrollIntoView({ behavior: "smooth", block: "center" });
+  const el = ids.map(id => document.querySelector(`[data-pid="${id}"]`)).find(Boolean);
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 function chooseShopeeAlt(pid) {
@@ -2830,6 +2828,7 @@ function shopeeAccept(p) {
   state.pkg = p;
   state.mode = "shop";
   state.coupon = null;
+  state.matchedPkgIds = null;
   state.shipping = { ...(state.shipping || {}), carrier: carrierOf(p), shopeeOrderSn: info.sn };
   pendingShopee = null;
   if (state.phone) {
