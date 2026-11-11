@@ -221,6 +221,8 @@
   .plan-grid .plan-badge{font-size:11px;padding:2px 9px}
   .pk-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:stretch;margin-top:12px}
   .so-box .pk-grid{grid-template-columns:1fr}
+  @keyframes pkBlink{0%,100%{box-shadow:0 0 0 0 rgba(11,94,215,0)}50%{box-shadow:0 0 0 6px rgba(11,94,215,.55)}}
+  .pk-card.pk-blink{animation:pkBlink .6s ease-in-out 5}
   .pk-card{position:relative;border:2px solid var(--c);border-radius:18px;padding:22px 0 14px;background:#fff;display:flex;flex-direction:column;text-align:center;overflow:visible}
   .pk-badge{position:absolute;top:-12px;left:10px;background:#e53935;color:#fff;font-size:11px;font-weight:700;padding:3px 12px;border-radius:99px;white-space:nowrap}
   .pk-title{font-size:19px;font-weight:800;color:#e53935;line-height:1.3;padding:6px 8px 0}
@@ -967,7 +969,7 @@ function planCardsHtml(list, action = "selectPackage") {
     const shopOff = isShop && info.amount ? `<span class="pk-off">ส่วนลดร้าน ${info.label}</span>` : "";
     const feats = (p.features || []).map(f => `<li>${f}</li>`).join("");
     return `
-    <div class="pk-card" style="--c:${p.color || "#0b5ed7"}">
+    <div class="pk-card" data-pid="${p.id}" style="--c:${p.color || "#0b5ed7"}">
       ${p.badge ? `<span class="pk-badge">${p.badge}</span>` : ""}
       <div class="pk-title">${p.name || p.speed || ""}</div>
       ${p.desc ? `<div class="pk-band">${p.desc}</div>` : ""}
@@ -2724,7 +2726,7 @@ function showShopOnlyPopup(p) {
   } else {
     form = `
       <label class="field-label" for="shopeeSn" style="margin-top:6px">หมายเลขคำสั่งซื้อ Shopee <span class="req">*</span></label>
-      <input id="shopeeSn" type="text" autocomplete="off" placeholder="กรอกหมายเลขคำสั่งซื้อจาก Shopee"
+      <input id="shopeeSn" type="text" autocomplete="off" placeholder="กรอกหมายเลขคำสั่งซื้อจาก Shopee" value="${esc(state.lastShopeeSn || "")}"
              style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #cbd5e1;border-radius:12px;font-size:16px">
       ${CONFIG.shopeeSample ? `<div class="m2-sample" style="margin-top:12px">
         <div class="m2-sample-h">ตัวอย่างคำสั่งซื้อบน Shopee (หมายเลขอยู่ตรงนี้)</div>
@@ -2784,19 +2786,36 @@ async function checkShopeeOrder(pid) {
     }
     const itemText = items.map(i => i.name + (i.model ? " (" + i.model + ")" : "")).join(", ") || "-";
     const alts = PACKAGES.filter(x => carrierOf(x) === carrierOf(p) && shopeeMatches(x, items));
-    choices.innerHTML = `<div class="err" style="display:block;color:#b42318">แพ็กเกจที่คุณเลือกไม่ตรงกับคำสั่งซื้อ Shopee ของคุณ<br><b>คุณสั่งซื้อ:</b> ${esc(itemText)}</div>`
-      + (alts.length ? "" : `<p class="hint" style="text-align:center">ไม่พบแพ็กเกจที่ตรงกับคำสั่งซื้อนี้ กรุณาติดต่อร้าน</p>`);
-    // แสดงแพ็กเกจที่ตรงกับคำสั่งซื้อ ใต้ปุ่มปิด ให้ลูกค้ากดชำระเงินแพ็กเกจนั้นได้เลย
-    const altBox = document.getElementById("shopeeAlts");
-    if (altBox) altBox.innerHTML = alts.length
-      ? `<p class="hint" style="text-align:center;margin:12px 0 4px">แพ็กเกจที่ตรงกับคำสั่งซื้อของคุณ</p>${planCardsHtml(alts, "chooseShopeeAlt")}`
-      : "";
+
+    if (alts.length) {
+      // พบแพ็กเกจที่ตรงกับคำสั่งซื้อ: ปิดป๊อปอัป แล้วเด้งไปที่รายการแพ็กเกจและทำให้การ์ดนั้นกระพริบ
+      state.lastShopeeSn = sn;
+      closeShopOnly();
+      highlightPackages(alts.map(x => x.id));
+      return;
+    }
+    choices.innerHTML = `<div class="err" style="display:block;color:#b42318">แพ็กเกจที่คุณเลือกไม่ตรงกับคำสั่งซื้อ Shopee ของคุณ<br><b>คุณสั่งซื้อ:</b> ${esc(itemText)}</div>
+      <p class="hint" style="text-align:center">ไม่พบแพ็กเกจที่ตรงกับคำสั่งซื้อนี้ กรุณาติดต่อร้าน</p>`;
   } catch (e) {
     showErr(e.message || "ตรวจสอบคำสั่งซื้อไม่สำเร็จ");
   } finally {
     btn.disabled = false;
     btn.textContent = "ตรวจสอบคำสั่งซื้อ";
   }
+}
+
+// เด้งไปที่การ์ดแพ็กเกจแล้วให้กระพริบ (ใช้เมื่อคำสั่งซื้อ Shopee ตรงกับแพ็กเกจอื่น)
+function highlightPackages(ids) {
+  let first = null;
+  ids.forEach(id => {
+    const el = document.querySelector(`[data-pid="${id}"]`);
+    if (!el) return;
+    if (!first) first = el;
+    el.classList.remove("pk-blink");
+    void el.offsetWidth;
+    el.classList.add("pk-blink");
+  });
+  if (first) first.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 function chooseShopeeAlt(pid) {
