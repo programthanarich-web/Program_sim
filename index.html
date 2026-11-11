@@ -2330,12 +2330,12 @@ const screens = {
           : `<div class="qr-empty">QR พร้อมเพย์</div>`}</div>
  ${CONFIG.QR_IMAGE_URL ? `<button type="button" class="qr-dl" onclick="downloadQR()">ดาวน์โหลด QR Code</button>` : ""}
         ${needOrderImg() ? `
-        <label class="field-label" for="orderImg">แนบรูปคำสั่งซื้อให้ทางร้าน <span class="req">*</span></label>
+        <label class="field-label" for="orderImg">แนบรูปคำสั่งซื้อ (Shopee / Lazada / TikTok) ให้ทางร้าน <span class="req">*</span></label>
         <label class="slip-drop" id="orderDrop" for="orderImg">
           <span class="slip-icon">📸</span>
           <span class="slip-text">
             <b id="orderName">ยังไม่ได้เลือกรูปคำสั่งซื้อ</b>
-            <small>แคปหน้าจอแพ็กเกจที่เลือก แล้วแนบมาที่นี่ (รูปจะถูกส่งไปที่แชทของร้าน)</small>
+            <small>แคปหน้าจอคำสั่งซื้อจาก Shopee / Lazada / TikTok แล้วแนบมาที่นี่ รูปจะถูกส่งเข้าแชทของร้าน</small>
           </span>
           <span class="slip-pick">เลือกรูป</span>
         </label>
@@ -2996,10 +2996,11 @@ function resumeOrderWatch() {
   } catch (e) { /* ข้าม */ }
 }
 
-// หน้าชำระเงินของเครือข่ายทรู (สมัครกับทางร้าน) ต้องแนบรูปคำสั่งซื้อให้ทางร้าน
+// แพ็กเกจที่ต้องสมัครกับทางร้าน ต้องแนบรูปคำสั่งซื้อ (จาก Shopee / Lazada / TikTok) ให้ทางร้าน
 function needOrderImg() {
   const p = state.pkg;
-  if (!p || carrierOf(p) !== "truemove H" || p.month2 || p.simAge) return false;
+  if (!p || p.month2 || p.simAge) return false;
+  if (!(p.shopOnly || state.mode === "shop")) return false;
   return !(state.shipping && (state.shipping.confirmImg || state.shipping.simAge));
 }
 
@@ -3045,7 +3046,7 @@ async function submitPayment() {
   const file = slipOn && slipInput ? slipInput.files[0] : null;
   const err = document.getElementById("payErr");
   if (slipOn && !file) { err.textContent = "กรุณาแนบสลิปการโอนเงิน"; err.style.display = "block"; return; }
-  if (needOrderImg() && !(state.shipping && state.shipping.orderImg)) { err.textContent = "กรุณาแนบรูปคำสั่งซื้อให้ทางร้าน"; err.style.display = "block"; return; }
+  if (needOrderImg() && !(state.shipping && state.shipping.orderImg)) { err.textContent = "กรุณาแนบรูปคำสั่งซื้อจาก Shopee / Lazada / TikTok ให้ทางร้าน"; err.style.display = "block"; return; }
 
   const btn = document.getElementById("paySubmit");
   btn.disabled = true;
