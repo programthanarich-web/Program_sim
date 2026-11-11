@@ -2270,6 +2270,35 @@ const screens = {
       </div>`;
   },
 
+  // ช่องทางที่ตรวจอัตโนมัติไม่ได้ (เช่น TikTok): ให้แนบรูปคำสั่งซื้อก่อนชำระเงิน
+  "order-img"() {
+    hero.classList.add("hidden");
+    const p = state.pkg;
+    if (!p) return `<div class="card"><button class="btn ghost" onclick="goBack()">ย้อนกลับ</button></div>`;
+    const img = state.shipping && state.shipping.orderImg;
+    return `
+      <div class="card">
+        <div class="info">
+          <div><span>แพ็กเกจ</span><b>${p.name}</b></div>
+        </div>
+        <label class="field-label" for="orderImg">แนบรูปคำสั่งซื้อให้ทางร้านก่อนชำระเงิน <span class="req">*</span></label>
+        <p class="hint">ถ่ายหรือแคปหน้าจอคำสั่งซื้อที่เห็นชื่อแพ็กเกจและราคาชัดเจน ทางร้านจะตรวจรูปก่อนให้ชำระเงิน จะได้ไม่ต้องโอนเงินคืนภายหลัง</p>
+        <label class="slip-drop" id="orderDrop" for="orderImg" ${img ? 'class="slip-drop has-file"' : ""}>
+          <span class="slip-icon">📸</span>
+          <span class="slip-text">
+            <b id="orderName">${img ? "แนบรูปคำสั่งซื้อแล้ว" : "ยังไม่ได้เลือกรูปคำสั่งซื้อ"}</b>
+            <small>รองรับไฟล์รูปภาพ JPG / PNG</small>
+          </span>
+          <span class="slip-pick">เลือกรูป</span>
+        </label>
+        <input type="file" id="orderImg" accept="image/*" class="sr-only" onchange="onOrderImgPick(this)">
+        ${img ? `<img src="${img}" alt="รูปคำสั่งซื้อ" style="width:100%;border-radius:12px;margin-top:10px">` : ""}
+        <div class="err" id="payErr"></div>
+        <button class="btn" style="margin-top:14px" onclick="orderImgNext()">ถัดไป ชำระค่าแพ็กเกจ</button>
+        <button class="btn ghost" style="margin-top:10px" onclick="goBack()">ย้อนกลับ</button>
+      </div>`;
+  },
+
   // เลือกวิธีสมัคร (สมัครเองหรือกับทางร้าน) หลังเลือกแพ็กเกจแล้ว
   "pick-method"() {
     hero.classList.add("hidden");
@@ -2329,17 +2358,6 @@ const screens = {
           ? `<img src="${CONFIG.QR_IMAGE_URL}" alt="QR พร้อมเพย์">`
           : `<div class="qr-empty">QR พร้อมเพย์</div>`}</div>
  ${CONFIG.QR_IMAGE_URL ? `<button type="button" class="qr-dl" onclick="downloadQR()">ดาวน์โหลด QR Code</button>` : ""}
-        ${needOrderImg() ? `
-        <label class="field-label" for="orderImg">แนบรูปคำสั่งซื้อ (Shopee / Lazada / TikTok) ให้ทางร้าน <span class="req">*</span></label>
-        <label class="slip-drop" id="orderDrop" for="orderImg">
-          <span class="slip-icon">📸</span>
-          <span class="slip-text">
-            <b id="orderName">ยังไม่ได้เลือกรูปคำสั่งซื้อ</b>
-            <small>แคปหน้าจอคำสั่งซื้อจาก Shopee / Lazada / TikTok แล้วแนบมาที่นี่ รูปจะถูกส่งเข้าแชทของร้าน</small>
-          </span>
-          <span class="slip-pick">เลือกรูป</span>
-        </label>
-        <input type="file" id="orderImg" accept="image/*" class="sr-only" onchange="onOrderImgPick(this)">` : ""}
         ${CONFIG.SLIP_CHECK === false ? "" : `
         <label class="field-label" for="slip">แนบสลิปการโอนเงิน</label>
         <label class="slip-drop" id="slipDrop" for="slip">
@@ -2493,7 +2511,7 @@ function netPhoneNext() {
   state.shipping = { carrier: netCarrierKey() };
   if (state.skipToPayment && state.pkg) {
     state.skipToPayment = false;
-    go("payment");
+    nextAfterOrder();
   } else {
     // หลังกรอกเบอร์ ให้ลูกค้าเลือกแพ็กเกจก่อน
     go("packages");
@@ -2688,24 +2706,39 @@ function showShopOnlyPopup(p) {
   const el = document.createElement("div");
   el.id = "shopOnlyPop";
   el.className = "so-overlay";
-  el.innerHTML = `
-    <div class="so-box">
-      <h3>${esc(p.name)}</h3>
-      <p>${state.mode !== "shop" ? "ไม่สามารถสมัครเองได้ " : ""}กรอกหมายเลขคำสั่งซื้อ Shopee เพื่อตรวจสอบแพ็กเกจ แล้วจึงชำระค่าแพ็กเกจเน็ต</p>
+  const steps = `
       <div class="so-steps">
         <b>ขั้นตอนการสมัคร</b>
         <ol>
-          <li>กดปุ่มชำระค่าแพ็คเกจ และแนบสลิปการชำระเงิน</li>
+          <li>${orderChannelOf(p) === "photo" ? "ถ่ายรูปคำสั่งซื้อส่งให้ร้าน และชำระค่าแพ็กเกจเน็ต แนบสลิปการชำระเงิน" : "ตรวจสอบหมายเลขคำสั่งซื้อ Shopee แล้วชำระค่าแพ็กเกจเน็ต แนบสลิปการชำระเงิน"}</li>
           <li>รอทางร้านตรวจสอบ และยืนยันการสมัครเน็ต ระบบจะแจ้งสถานะการสมัครเน็ตให้ลูกค้าทราบผ่านหน้าจอ <b style="display:inline;font-size:13px">ห้ามทักซ้ำ</b> เพราะจะทำให้การสมัครเน็ตล่าช้า</li>
           <li>เมื่อทางร้านสมัครเน็ตให้ลูกค้าเสร็จเรียบร้อย ระบบจะแจ้งเตือนแพ็คเกจเน็ตผ่าน SMS เมื่อได้รับ SMS แล้วลูกค้าสามารถใช้งานเน็ตได้เลย</li>
         </ol>
-      </div>
+      </div>`;
+  let form;
+  if (orderChannelOf(p) === "photo") {
+    form = `
+      <p class="hint" style="text-align:center;margin:10px 0">แพ็กเกจนี้สั่งซื้อผ่านช่องทางที่ระบบตรวจอัตโนมัติไม่ได้ ในขั้นตอนถัดไปให้ถ่ายรูปคำสั่งซื้อแนบมาได้เลย</p>
+      <button class="btn" onclick="payShopOnly('${p.id}')">ไปแนบรูปคำสั่งซื้อและชำระเงิน</button>`;
+  } else {
+    form = `
       <label class="field-label" for="shopeeSn" style="margin-top:6px">หมายเลขคำสั่งซื้อ Shopee <span class="req">*</span></label>
       <input id="shopeeSn" type="text" autocomplete="off" placeholder="กรอกหมายเลขคำสั่งซื้อจาก Shopee"
              style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #cbd5e1;border-radius:12px;font-size:16px">
+      ${CONFIG.shopeeSample ? `<div class="m2-sample" style="margin-top:12px">
+        <div class="m2-sample-h">ตัวอย่างคำสั่งซื้อบน Shopee (หมายเลขอยู่ตรงนี้)</div>
+        <img src="${CONFIG.shopeeSample}" alt="ตัวอย่างคำสั่งซื้อ Shopee">
+      </div>` : ""}
       <div class="err" id="shopeeErr" style="display:none"></div>
       <div id="shopeeChoices"></div>
-      <button class="btn" id="shopeeBtn" style="margin-top:10px" onclick="checkShopeeOrder('${p.id}')">ตรวจสอบคำสั่งซื้อ</button>
+      <button class="btn" id="shopeeBtn" style="margin-top:10px" onclick="checkShopeeOrder('${p.id}')">ตรวจสอบคำสั่งซื้อ</button>`;
+  }
+  el.innerHTML = `
+    <div class="so-box">
+      <h3>${esc(p.name)}</h3>
+      <p>${state.mode !== "shop" ? "ไม่สามารถสมัครเองได้ " : ""}กรุณาทำตามขั้นตอนด้านล่างเพื่อชำระค่าแพ็กเกจเน็ต</p>
+      ${steps}
+      ${form}
       <button class="btn ghost" style="margin-top:10px" onclick="closeShopOnly()">ปิด</button>
     </div>`;
   document.body.appendChild(el);
@@ -2746,6 +2779,11 @@ async function checkShopeeOrder(pid) {
     }
     const itemText = items.map(i => i.name + (i.model ? " (" + i.model + ")" : "")).join(", ") || "-";
     const alts = PACKAGES.filter(x => carrierOf(x) === carrierOf(p) && shopeeMatches(x, items));
+    // ตรงกับแพ็กเกจเดียว: พาไปแพ็กเกจที่ลูกค้าสั่งซื้อจริงเลย
+    if (alts.length === 1) {
+      shopeeAccept(alts[0]);
+      return;
+    }
     let html = `<div class="err" style="display:block;color:#b42318">แพ็กเกจที่คุณเลือกไม่ตรงกับคำสั่งซื้อ Shopee ของคุณ<br><b>คุณสั่งซื้อ:</b> ${esc(itemText)}</div>`;
     if (alts.length) {
       html += `<p class="hint" style="text-align:center;margin:10px 0 6px">เลือกแพ็กเกจที่ตรงกับคำสั่งซื้อของคุณ</p>`;
@@ -2777,7 +2815,7 @@ function shopeeAccept(p) {
   state.shipping = { ...(state.shipping || {}), carrier: carrierOf(p), shopeeOrderSn: info.sn };
   pendingShopee = null;
   if (state.phone) {
-    go("payment");
+    nextAfterOrder();
   } else {
     state.skipToPayment = true;
     go("net-phone");
@@ -2799,7 +2837,7 @@ function payShopOnly(id) {
   const needSerial = needsSimForm() && !hasRenewalInfo;
   const ready = needSerial ? (state.serial && state.phone) : state.phone;
   if (ready) {
-    go("payment");
+    nextAfterOrder();
   } else {
     state.skipToPayment = true;
     go(needSerial ? "sim-form" : "net-phone");
@@ -3075,10 +3113,28 @@ function resumeOrderWatch() {
 }
 
 // แพ็กเกจที่ต้องสมัครกับทางร้าน ต้องแนบรูปคำสั่งซื้อ (จาก Shopee / Lazada / TikTok) ให้ทางร้าน
+// หลังข้อมูลคำสั่งซื้อพร้อม: ช่องทางที่ต้องแนบรูปจะไปขั้นแนบรูปก่อน ที่เหลือไปชำระเงินเลย
+function nextAfterOrder() {
+  if (needOrderImg() && !(state.shipping && state.shipping.orderImg)) go("order-img");
+  else go("payment");
+}
+
+function orderImgNext() {
+  const err = document.getElementById("payErr");
+  if (!(state.shipping && state.shipping.orderImg)) {
+    if (err) { err.textContent = "กรุณาแนบรูปคำสั่งซื้อก่อนชำระเงิน"; err.style.display = "block"; }
+    return;
+  }
+  go("payment");
+}
+
+function orderChannelOf(p) { return p && p.orderChannel === "photo" ? "photo" : "shopee"; }
+
 function needOrderImg() {
   const p = state.pkg;
   if (!p || p.month2 || p.simAge) return false;
   if (!(p.shopOnly || state.mode === "shop")) return false;
+  if (orderChannelOf(p) !== "photo") return false;
   return !(state.shipping && (state.shipping.confirmImg || state.shipping.simAge));
 }
 
