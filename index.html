@@ -2746,10 +2746,13 @@ function showShopOnlyPopup(p) {
 
 let pendingShopee = null;
 
+// เทียบชื่อสินค้าแบบไม่สนใจช่องว่างและตัวพิมพ์ เช่น "10 Mbps" ตรงกับ "10Mbps"
+// ใช้คำค้นชื่อสินค้า Shopee ที่ตั้งในหลังบ้าน ถ้าไม่ได้ตั้งจะใช้ความเร็วของแพ็กเกจแทน
 function shopeeMatches(p, items) {
-  const kw = String(p.shopeeKeyword || "").trim().toLowerCase();
+  const raw = String(p.shopeeKeyword || p.speed || "").trim();
+  const kw = raw.toLowerCase().replace(/\s+/g, "");
   if (!kw) return false;
-  return items.some(it => `${it.name} ${it.model}`.toLowerCase().includes(kw));
+  return items.some(it => `${it.name} ${it.model}`.toLowerCase().replace(/\s+/g, "").includes(kw));
 }
 
 // ตรวจคำสั่งซื้อ Shopee ผ่านหลังบ้าน แล้วเทียบกับแพ็กเกจที่ลูกค้ากด
