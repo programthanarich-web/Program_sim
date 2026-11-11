@@ -955,7 +955,7 @@ function shopDiscountInfo(p) {
 }
 
 // การ์ดแพ็กเกจ (ใช้ทั้งเมนูเดือนแรกและเมนูเดือนที่ 2)
-function planCardsHtml(list) {
+function planCardsHtml(list, action = "selectPackage") {
   const isShop = state.mode === "shop";
   const cards = list.map(p => {
     const info = shopDiscountInfo(p);
@@ -977,7 +977,7 @@ function planCardsHtml(list) {
         <summary>ดูรายละเอียด</summary>
         <ul class="pk-feat">${feats}</ul>
       </details>
-      <button class="pk-btn" onclick="selectPackage('${p.id}')">สมัครแพ็กเกจเน็ต</button>
+      <button class="pk-btn" onclick="${action}('${p.id}')">สมัครแพ็กเกจเน็ต</button>
     </div>`;
   }).join("");
   return `<div class="pk-grid">${cards}</div>`;
@@ -1051,12 +1051,13 @@ const sendToLine = payload => postJSON(CONFIG.LINE_ENDPOINT, { message: payload 
 // เลือกเครือข่ายก่อนสมัครแพ็กเกจเน็ต แล้วไปหน้าเลือกเติมเงินเอง / กับทางร้าน
 function pickNetCarrier(key) {
   state.netCarrier = key;
-  // AIS / dtac ไม่มีเมนูเลือกแบบ: กรอกเบอร์แล้วเลือกแพ็กเกจได้เลย
-  if (key !== "truemove H") {
-    startFlow("self");
-    return;
-  }
-  go("net-menu");
+  // ลูกค้ากรอกเบอร์ที่จะสมัครก่อน แล้วค่อยเลือกแพ็กเกจ และวิธีสมัคร
+  state.mode = null;
+  state.pkg = null;
+  state.phone = "";
+  state.serial = "";
+  state.shipping = { carrier: key };
+  go("net-phone");
 }
 
 /* ----- ต่อแพ็กเกจเดือนที่ 2 ----- */
@@ -2264,7 +2265,29 @@ const screens = {
     hero.classList.add("hidden");
     return `
       <div class="card">
-        ${planCardsHtml(PACKAGES.filter(p => !p.month2 && !p.simAge && carrierOf(p) === netCarrierKey() && (state.mode !== "shop" || p.shopVisible)))}
+        ${planCardsHtml(PACKAGES.filter(p => !p.month2 && !p.simAge && carrierOf(p) === netCarrierKey()), "selectNetPackage")}
+        <button class="btn ghost" style="margin-top:12px" onclick="goBack()">ย้อนกลับ</button>
+      </div>`;
+  },
+
+  // เลือกวิธีสมัคร (สมัครเองหรือกับทางร้าน) หลังเลือกแพ็กเกจแล้ว
+  "pick-method"() {
+    hero.classList.add("hidden");
+    const p = state.pkg;
+    if (!p) return `<div class="card"><button class="btn ghost" onclick="goBack()">ย้อนกลับ</button></div>`;
+    const canSelf = !p.shopOnly;
+    const canShop = !!(p.shopVisible || p.shopOnly);
+    return `
+      <div class="card">
+        <div class="info">
+          <div><span>แพ็กเกจ</span><b>${p.name}</b></div>
+          <div><span>${firstPriceOf(p) !== p.price ? "ราคาเดือนแรก" : "ราคาปกติ"}</span><span>${firstPriceOf(p)} บาท</span></div>
+        </div>
+        <label class="carrier-title">เลือกวิธีสมัครแพ็กเกจนี้ <span class="req">*</span></label>
+        ${canSelf ? `<button class="btn" onclick="startFlow('self')">สมัครเน็ตเอง</button>` : ""}
+        ${canShop ? `<button class="btn" style="margin-top:10px" onclick="startFlow('shop')">สมัครเน็ตกับทางร้าน</button>` : ""}
+        ${!canSelf && !canShop ? `<p class="hint" style="text-align:center">แพ็กเกจนี้ยังไม่เปิดให้สมัคร กรุณาติดต่อร้าน</p>` : ""}
+        <button class="btn ghost" style="margin-top:10px" onclick="goBack()">ย้อนกลับ</button>
       </div>`;
   },
 
@@ -2273,10 +2296,10 @@ const screens = {
     const p = state.pkg;
     return `
       <div class="card">
-        <div class="code-box">
+        ${p.code ? `<div class="code-box">
           <small>รหัสสมัครเน็ต</small>
           <div class="code">${p.code}</div>
-        </div>
+        </div>` : ""}
         <b style="font-size:14px">ขั้นตอนการสมัคร</b>
         <ol class="steps">${(carrierOf(p) === "truemove H" ? SELF_STEPS : ((CONFIG.SELF_STEPS_BY || {})[carrierOf(p)] || [])).map(s => `<li>${s}</li>`).join("") || "<li>ยังไม่ได้ตั้งขั้นตอนสมัครของเครือข่ายนี้</li>"}</ol>
         <button class="btn ghost" onclick="resetTo('home')">กลับหน้าหลัก</button>
@@ -2306,6 +2329,17 @@ const screens = {
           ? `<img src="${CONFIG.QR_IMAGE_URL}" alt="QR พร้อมเพย์">`
           : `<div class="qr-empty">QR พร้อมเพย์</div>`}</div>
  ${CONFIG.QR_IMAGE_URL ? `<button type="button" class="qr-dl" onclick="downloadQR()">ดาวน์โหลด QR Code</button>` : ""}
+        ${needOrderImg() ? `
+        <label class="field-label" for="orderImg">แนบรูปคำสั่งซื้อให้ทางร้าน <span class="req">*</span></label>
+        <label class="slip-drop" id="orderDrop" for="orderImg">
+          <span class="slip-icon">📸</span>
+          <span class="slip-text">
+            <b id="orderName">ยังไม่ได้เลือกรูปคำสั่งซื้อ</b>
+            <small>แคปหน้าจอแพ็กเกจที่เลือก แล้วแนบมาที่นี่ (รูปจะถูกส่งไปที่แชทของร้าน)</small>
+          </span>
+          <span class="slip-pick">เลือกรูป</span>
+        </label>
+        <input type="file" id="orderImg" accept="image/*" class="sr-only" onchange="onOrderImgPick(this)">` : ""}
         ${CONFIG.SLIP_CHECK === false ? "" : `
         <label class="field-label" for="slip">แนบสลิปการโอนเงิน</label>
         <label class="slip-drop" id="slipDrop" for="slip">
@@ -2436,15 +2470,14 @@ function luckyNext() {
 function carrierOf(p) { return p.carrier || "truemove H"; }
 function netCarrierKey() { return state.netCarrier || "truemove H"; }
 // True ต้องกรอกเบอร์กับซีเรียลซิม ส่วน AIS / dtac ข้ามไปเลือกแพ็กเกจได้เลย
-function needsSimForm() { return netCarrierKey() === "truemove H"; }
+function needsSimForm() { return false; }
 
+// เลือกวิธีสมัครแล้ว (เบอร์กรอกไว้แล้วจากขั้นแรก)
 function startFlow(mode) {
   state.mode = mode;
-  state.serial = "";
-  state.phone = "";
-  state.shipping = needsSimForm() ? null : { carrier: netCarrierKey() };
-  if (needsSimForm()) go("sim-form");
-  else go("net-phone");
+  if (!state.phone || !state.pkg) { go(state.pkg ? "net-phone" : "packages"); return; }
+  if (mode === "shop") showShopOnlyPopup(state.pkg);
+  else go("self-detail");
 }
 
 function netPhoneNext() {
@@ -2458,10 +2491,11 @@ function netPhoneNext() {
   state.phone = phone;
   state.serial = "";
   state.shipping = { carrier: netCarrierKey() };
-  if (state.skipToPayment) {
+  if (state.skipToPayment && state.pkg) {
     state.skipToPayment = false;
     go("payment");
   } else {
+    // หลังกรอกเบอร์ ให้ลูกค้าเลือกแพ็กเกจก่อน
     go("packages");
   }
 }
@@ -2616,6 +2650,19 @@ async function submitSim() {
     err.style.display = "block";
     btn.disabled = false;
  btn.textContent = "เลือกแพ็คเกจเน็ต ";
+  }
+}
+
+// เลือกแพ็กเกจจากหน้าสมัครเน็ต: ถ้าต้องสมัครกับทางร้าน ขึ้นป๊อปอัปให้ชำระเงิน / ถ้าสมัครเองได้ แสดงรหัสสมัครเลย
+function selectNetPackage(id) {
+  const p = PACKAGES.find(x => x.id === id);
+  state.pkg = p;
+  state.coupon = null;
+  state.mode = null;
+  if (p.shopOnly) {
+    showShopOnlyPopup(p);
+  } else {
+    go("self-detail");
   }
 }
 
@@ -2949,6 +2996,38 @@ function resumeOrderWatch() {
   } catch (e) { /* ข้าม */ }
 }
 
+// หน้าชำระเงินของเครือข่ายทรู (สมัครกับทางร้าน) ต้องแนบรูปคำสั่งซื้อให้ทางร้าน
+function needOrderImg() {
+  const p = state.pkg;
+  if (!p || carrierOf(p) !== "truemove H" || p.month2 || p.simAge) return false;
+  return !(state.shipping && (state.shipping.confirmImg || state.shipping.simAge));
+}
+
+async function onOrderImgPick(input) {
+  const f = input.files && input.files[0];
+  const name = document.getElementById("orderName");
+  const drop = document.getElementById("orderDrop");
+  const err = document.getElementById("payErr");
+  if (!f) return;
+  if (name) name.textContent = "กำลังอัปโหลดรูป...";
+  try {
+    const img = await normalizeSlipImage(f);
+    const fd = new FormData();
+    fd.append("file", img, "order.jpg");
+    const res = await fetch(API_BASE + "/upload-confirm", { method: "POST", body: fd });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok || !d.url) throw new Error(d.error || "upload failed");
+    state.shipping = { ...(state.shipping || {}), orderImg: d.url };
+    if (name) name.textContent = f.name;
+    if (drop) drop.classList.add("has-file");
+    if (err) err.style.display = "none";
+  } catch (e) {
+    state.shipping = { ...(state.shipping || {}), orderImg: "" };
+    if (name) name.textContent = "อัปโหลดรูปไม่สำเร็จ กรุณาเลือกใหม่";
+    if (drop) drop.classList.remove("has-file");
+  }
+}
+
 function onSlipPick(input) {
   const f = input.files && input.files[0];
   const name = document.getElementById("slipName");
@@ -2966,6 +3045,7 @@ async function submitPayment() {
   const file = slipOn && slipInput ? slipInput.files[0] : null;
   const err = document.getElementById("payErr");
   if (slipOn && !file) { err.textContent = "กรุณาแนบสลิปการโอนเงิน"; err.style.display = "block"; return; }
+  if (needOrderImg() && !(state.shipping && state.shipping.orderImg)) { err.textContent = "กรุณาแนบรูปคำสั่งซื้อให้ทางร้าน"; err.style.display = "block"; return; }
 
   const btn = document.getElementById("paySubmit");
   btn.disabled = true;
