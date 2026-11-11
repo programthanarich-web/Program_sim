@@ -2740,6 +2740,7 @@ function showShopOnlyPopup(p) {
       ${steps}
       ${form}
       <button class="btn ghost" style="margin-top:10px" onclick="closeShopOnly()">ปิด</button>
+      <div id="shopeeAlts"></div>
     </div>`;
   document.body.appendChild(el);
 }
@@ -2782,19 +2783,13 @@ async function checkShopeeOrder(pid) {
     }
     const itemText = items.map(i => i.name + (i.model ? " (" + i.model + ")" : "")).join(", ") || "-";
     const alts = PACKAGES.filter(x => carrierOf(x) === carrierOf(p) && shopeeMatches(x, items));
-    // ตรงกับแพ็กเกจเดียว: พาไปแพ็กเกจที่ลูกค้าสั่งซื้อจริงเลย
-    if (alts.length === 1) {
-      shopeeAccept(alts[0]);
-      return;
-    }
-    let html = `<div class="err" style="display:block;color:#b42318">แพ็กเกจที่คุณเลือกไม่ตรงกับคำสั่งซื้อ Shopee ของคุณ<br><b>คุณสั่งซื้อ:</b> ${esc(itemText)}</div>`;
-    if (alts.length) {
-      html += `<p class="hint" style="text-align:center;margin:10px 0 6px">เลือกแพ็กเกจที่ตรงกับคำสั่งซื้อของคุณ</p>`;
-      html += alts.map(x => `<button class="btn ghost" style="margin-top:8px" onclick="chooseShopeeAlt('${x.id}')">${esc(x.name)}</button>`).join("");
-    } else {
-      html += `<p class="hint" style="text-align:center">ไม่พบแพ็กเกจที่ตรงกับคำสั่งซื้อนี้ กรุณาติดต่อร้าน</p>`;
-    }
-    choices.innerHTML = html;
+    choices.innerHTML = `<div class="err" style="display:block;color:#b42318">แพ็กเกจที่คุณเลือกไม่ตรงกับคำสั่งซื้อ Shopee ของคุณ<br><b>คุณสั่งซื้อ:</b> ${esc(itemText)}</div>`
+      + (alts.length ? "" : `<p class="hint" style="text-align:center">ไม่พบแพ็กเกจที่ตรงกับคำสั่งซื้อนี้ กรุณาติดต่อร้าน</p>`);
+    // แสดงแพ็กเกจที่ตรงกับคำสั่งซื้อ ใต้ปุ่มปิด ให้ลูกค้ากดชำระเงินแพ็กเกจนั้นได้เลย
+    const altBox = document.getElementById("shopeeAlts");
+    if (altBox) altBox.innerHTML = alts.length
+      ? `<p class="hint" style="text-align:center;margin:12px 0 4px">แพ็กเกจที่ตรงกับคำสั่งซื้อของคุณ</p>${planCardsHtml(alts, "chooseShopeeAlt")}`
+      : "";
   } catch (e) {
     showErr(e.message || "ตรวจสอบคำสั่งซื้อไม่สำเร็จ");
   } finally {
