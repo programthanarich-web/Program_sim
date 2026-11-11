@@ -2691,7 +2691,7 @@ function showShopOnlyPopup(p) {
   el.innerHTML = `
     <div class="so-box">
       <h3>${esc(p.name)}</h3>
-      <p>${state.mode !== "shop" ? "ไม่สามารถสมัครเองได้ " : ""}กดปุ่มด้านล่างเพื่อชำระค่าแพ็กเกจเน็ต</p>
+      <p>${state.mode !== "shop" ? "ไม่สามารถสมัครเองได้ " : ""}กรอกหมายเลขคำสั่งซื้อ Shopee เพื่อตรวจสอบแพ็กเกจ แล้วจึงชำระค่าแพ็กเกจเน็ต</p>
       <div class="so-steps">
         <b>ขั้นตอนการสมัคร</b>
         <ol>
@@ -2700,10 +2700,88 @@ function showShopOnlyPopup(p) {
           <li>เมื่อทางร้านสมัครเน็ตให้ลูกค้าเสร็จเรียบร้อย ระบบจะแจ้งเตือนแพ็คเกจเน็ตผ่าน SMS เมื่อได้รับ SMS แล้วลูกค้าสามารถใช้งานเน็ตได้เลย</li>
         </ol>
       </div>
- <button class="btn" onclick="payShopOnly('${p.id}')">ชำระค่าแพ็กเกจเน็ต</button>
+      <label class="field-label" for="shopeeSn" style="margin-top:6px">หมายเลขคำสั่งซื้อ Shopee <span class="req">*</span></label>
+      <input id="shopeeSn" type="text" autocomplete="off" placeholder="กรอกหมายเลขคำสั่งซื้อจาก Shopee"
+             style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #cbd5e1;border-radius:12px;font-size:16px">
+      <div class="err" id="shopeeErr" style="display:none"></div>
+      <div id="shopeeChoices"></div>
+      <button class="btn" id="shopeeBtn" style="margin-top:10px" onclick="checkShopeeOrder('${p.id}')">ตรวจสอบคำสั่งซื้อ</button>
       <button class="btn ghost" style="margin-top:10px" onclick="closeShopOnly()">ปิด</button>
     </div>`;
   document.body.appendChild(el);
+}
+
+let pendingShopee = null;
+
+function shopeeMatches(p, items) {
+  const kw = String(p.shopeeKeyword || "").trim().toLowerCase();
+  if (!kw) return false;
+  return items.some(it => `${it.name} ${it.model}`.toLowerCase().includes(kw));
+}
+
+// ตรวจคำสั่งซื้อ Shopee ผ่านหลังบ้าน แล้วเทียบกับแพ็กเกจที่ลูกค้ากด
+async function checkShopeeOrder(pid) {
+  const p = PACKAGES.find(x => x.id === pid);
+  const sn = (document.getElementById("shopeeSn").value || "").replace(/\s/g, "").trim();
+  const err = document.getElementById("shopeeErr");
+  const btn = document.getElementById("shopeeBtn");
+  const choices = document.getElementById("shopeeChoices");
+  const showErr = m => { err.textContent = m; err.style.display = "block"; };
+  err.style.display = "none";
+  choices.innerHTML = "";
+  if (!/^[A-Za-z0-9]{6,30}$/.test(sn)) { showErr("กรุณากรอกหมายเลขคำสั่งซื้อ Shopee ให้ถูกต้อง"); return; }
+  btn.disabled = true;
+  btn.textContent = "กำลังตรวจสอบ...";
+  try {
+    const res = await fetch(API_BASE + "/shopee/check-order", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ orderSn: sn })
+    });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok || !d.ok) throw new Error(d.error || "ตรวจสอบคำสั่งซื้อไม่สำเร็จ");
+    const items = d.items || [];
+    pendingShopee = { sn, items };
+    if (shopeeMatches(p, items)) {
+      shopeeAccept(p);
+      return;
+    }
+    const itemText = items.map(i => i.name + (i.model ? " (" + i.model + ")" : "")).join(", ") || "-";
+    const alts = PACKAGES.filter(x => carrierOf(x) === carrierOf(p) && shopeeMatches(x, items));
+    let html = `<div class="err" style="display:block;color:#b42318">แพ็กเกจที่คุณเลือกไม่ตรงกับคำสั่งซื้อ Shopee ของคุณ<br><b>คุณสั่งซื้อ:</b> ${esc(itemText)}</div>`;
+    if (alts.length) {
+      html += `<p class="hint" style="text-align:center;margin:10px 0 6px">เลือกแพ็กเกจที่ตรงกับคำสั่งซื้อของคุณ</p>`;
+      html += alts.map(x => `<button class="btn ghost" style="margin-top:8px" onclick="chooseShopeeAlt('${x.id}')">${esc(x.name)}</button>`).join("");
+    } else {
+      html += `<p class="hint" style="text-align:center">ไม่พบแพ็กเกจที่ตรงกับคำสั่งซื้อนี้ กรุณาติดต่อร้าน</p>`;
+    }
+    choices.innerHTML = html;
+  } catch (e) {
+    showErr(e.message || "ตรวจสอบคำสั่งซื้อไม่สำเร็จ");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "ตรวจสอบคำสั่งซื้อ";
+  }
+}
+
+function chooseShopeeAlt(pid) {
+  const p = PACKAGES.find(x => x.id === pid);
+  if (p) shopeeAccept(p);
+}
+
+// คำสั่งซื้อตรงกับแพ็กเกจแล้ว: ไปหน้าชำระเงิน (ติดข้อมูลคำสั่งซื้อ Shopee ไปด้วย)
+function shopeeAccept(p) {
+  const info = pendingShopee || { sn: "", items: [] };
+  closeShopOnly();
+  state.pkg = p;
+  state.mode = "shop";
+  state.coupon = null;
+  state.shipping = { ...(state.shipping || {}), carrier: carrierOf(p), shopeeOrderSn: info.sn };
+  pendingShopee = null;
+  if (state.phone) {
+    go("payment");
+  } else {
+    state.skipToPayment = true;
+    go("net-phone");
+  }
 }
 
 function closeShopOnly() {
