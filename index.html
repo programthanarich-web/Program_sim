@@ -3215,32 +3215,18 @@ function onSlipPick(input) {
 
 async function submitPayment() {
   const err = document.getElementById("payErr");
-  // ต้องเข้าสู่ระบบด้วย LINE ก่อนชำระเงิน เพื่อให้ระบบผูกคำสั่งซื้อกับแชท LINE ของลูกค้าและส่งสถานะให้อัตโนมัติ
-  if (!state.lineUser) {
-    err.textContent = "กรุณาเข้าสู่ระบบด้วย LINE ก่อน ระบบกำลังพาไปหน้าเข้าสู่ระบบ...";
-    err.style.display = "block";
+  // ไม่บังคับล็อกอิน LINE เพื่อไม่ให้การขายหยุด: ถ้าลูกค้าเข้าสู่ระบบ LINE อยู่แล้ว ระบบจะผูกคำสั่งซื้อกับแชทให้อัตโนมัติ
+  // ถ้าเป็นเพื่อนกับร้านแล้ว การเช็กนี้จะผ่านอัตโนมัติ
+  if (state.lineUser) {
     try {
-      saveState();
-      if (typeof liff !== "undefined") {
-        // ไม่ระบุ redirectUri เพื่อให้ใช้ Endpoint URL ที่ตั้งไว้ใน LIFF เท่านั้น (ป้องกัน 400 Bad Request)
-        liff.login();
-      } else {
-        err.textContent = "ไม่สามารถเปิดการเข้าสู่ระบบ LINE ได้ กรุณาเปิดเว็บนี้ใหม่อีกครั้ง";
+      const fs = await liff.getFriendship();
+      if (fs && fs.friendFlag === false) {
+        err.textContent = "กรุณาเพิ่มเพื่อนกับร้านใน LINE ก่อน (กดปุ่ม ติดต่อร้าน ด้านบนแล้วกดเพิ่มเพื่อน) จากนั้นกดชำระเงินอีกครั้ง";
+        err.style.display = "block";
+        return;
       }
-    } catch (e) {
-      err.textContent = "ไม่สามารถเข้าสู่ระบบ LINE ได้ กรุณาลองใหม่อีกครั้ง";
-    }
-    return;
+    } catch (e) { /* ตรวจไม่ได้ก็ให้ดำเนินการต่อ */ }
   }
-  // ต้องเป็นเพื่อนกับร้านก่อน ร้านจึงจะส่งสถานะเข้าแชทได้
-  try {
-    const fs = await liff.getFriendship();
-    if (fs && fs.friendFlag === false) {
-      err.textContent = "กรุณาเพิ่มเพื่อนกับร้านใน LINE ก่อน (กดปุ่ม ติดต่อร้าน ด้านบนแล้วกดเพิ่มเพื่อน) จากนั้นกดชำระเงินอีกครั้ง";
-      err.style.display = "block";
-      return;
-    }
-  } catch (e) { /* ตรวจไม่ได้ก็ให้ดำเนินการต่อ */ }
   // โหมดทดสอบ (ปิดการตรวจสลิปจากหลังบ้าน) ไม่ต้องแนบสลิป
   const slipOn = CONFIG.SLIP_CHECK !== false;
   const slipInput = document.getElementById("slip");
