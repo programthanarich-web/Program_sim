@@ -163,8 +163,8 @@
   .lk-price{margin-top:10px;background:linear-gradient(90deg,#06203f,#0d3d7a,#06203f);color:#f5c94a;text-align:center;font-weight:800;font-size:18px;padding:9px;border-radius:10px}
   .lk-foot{background:#0d4a94;color:#fff;font-size:12px;font-weight:700;text-align:center;padding:8px;margin:10px -8px 0}
   .lk-logo{height:30px;width:auto;max-width:110px;object-fit:contain}
-  .so-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
-  .so-box{background:#fff;border-radius:16px;padding:22px 18px;max-width:340px;width:100%;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+  .so-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .so-box{background:#fff;border-radius:16px;padding:22px 18px;max-width:340px;width:100%;max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow-y:auto;-webkit-overflow-scrolling:touch;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.3);margin:auto}
   .so-box h3{margin:0 0 8px;font-size:18px}
   .so-box p{font-size:14px;color:var(--muted);line-height:1.6;margin:0 0 16px}
   .so-steps{text-align:left;background:#f5f7fb;border-radius:12px;padding:12px 14px;margin:0 0 16px;font-size:13px;line-height:1.6;color:#333}
