@@ -2365,8 +2365,8 @@ const screens = {
           ? `<img src="${CONFIG.QR_IMAGE_URL}" alt="QR พร้อมเพย์">`
           : `<div class="qr-empty">QR พร้อมเพย์</div>`}</div>
  ${CONFIG.QR_IMAGE_URL ? `<button type="button" class="qr-dl" onclick="downloadQR()">ดาวน์โหลด QR Code</button>` : ""}
-        ${CONFIG.SLIP_CHECK === false ? "" : `
-        <label class="field-label" for="slip">แนบสลิปการโอนเงิน</label>
+        ${`
+        <label class="field-label" for="slip">${CONFIG.SLIP_CHECK === false ? "แนบรูปทดสอบ (ไม่ตรวจสลิป ใช้ทดสอบส่งเข้า LINE)" : "แนบสลิปการโอนเงิน"}</label>
         <label class="slip-drop" id="slipDrop" for="slip">
           <span class="slip-icon">🧾</span>
           <span class="slip-text">
@@ -3232,7 +3232,8 @@ async function submitPayment() {
   // โหมดทดสอบ (ปิดการตรวจสลิปจากหลังบ้าน) ไม่ต้องแนบสลิป
   const slipOn = CONFIG.SLIP_CHECK !== false;
   const slipInput = document.getElementById("slip");
-  const file = slipOn && slipInput ? slipInput.files[0] : null;
+  // แม้ปิดการตรวจสลิป ก็ยังอัปโหลดรูปที่แนบไว้ เพื่อทดสอบการส่งรูปเข้า LINE
+  const file = slipInput ? slipInput.files[0] : null;
   if (slipOn && !file) { err.textContent = "กรุณาแนบสลิปการโอนเงิน"; err.style.display = "block"; return; }
   if (needOrderImg() && !(state.shipping && state.shipping.orderImg)) { err.textContent = "กรุณาแนบรูปคำสั่งซื้อจาก Shopee / Lazada / TikTok ให้ทางร้าน"; err.style.display = "block"; return; }
 
