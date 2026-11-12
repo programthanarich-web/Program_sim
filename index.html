@@ -3222,7 +3222,8 @@ async function submitPayment() {
     try {
       saveState();
       if (typeof liff !== "undefined") {
-        liff.login({ redirectUri: location.href });
+        // ไม่ระบุ redirectUri เพื่อให้ใช้ Endpoint URL ที่ตั้งไว้ใน LIFF เท่านั้น (ป้องกัน 400 Bad Request)
+        liff.login();
       } else {
         err.textContent = "ไม่สามารถเปิดการเข้าสู่ระบบ LINE ได้ กรุณาเปิดเว็บนี้ใหม่อีกครั้ง";
       }
