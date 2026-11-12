@@ -459,7 +459,8 @@ const CONFIG = {
   SETTINGS_ENDPOINT: API_BASE + "/settings",       // ดึงการตั้งค่าจากหลังบ้าน (รูปตัวอย่าง, ราคา, ส่วนลด ฯลฯ) เป็น JSON
   DISCOUNT_SHOP: 100,
   DISCOUNT_SHOP_TYPE: "baht",          // ส่วนลดสมัครกับทางร้าน (บาท)
-  QR_IMAGE_URL: ""             // URL รูป QR พร้อมเพย์ของร้าน
+  QR_IMAGE_URL: "",            // URL รูป QR พร้อมเพย์ของร้าน
+  shopeeCheckEnabled: true     // เปิด/ปิดช่องตรวจสอบหมายเลขคำสั่งซื้อ (ตั้งจากหลังบ้าน)
 };
 
 // โหลดการตั้งค่าจากหลังบ้าน ทับค่าใน CONFIG เพื่อแก้รูปได้โดยไม่ต้องแก้โค้ด
@@ -2734,6 +2735,13 @@ function showShopOnlyPopup(p) {
     form = `
       <p class="hint" style="text-align:center;margin:10px 0">แพ็กเกจนี้สั่งซื้อผ่านช่องทางที่ระบบตรวจอัตโนมัติไม่ได้ ในขั้นตอนถัดไปให้ถ่ายรูปคำสั่งซื้อแนบมาได้เลย</p>
       <button class="btn" onclick="payShopOnly('${p.id}')">ไปแนบรูปคำสั่งซื้อและชำระเงิน</button>`;
+  } else if (CONFIG.shopeeCheckEnabled === false) {
+    form = `
+      <div style="margin-top:10px;padding:10px 12px;border-radius:12px;background:#f1f5f9;text-align:left">
+        <div style="font-weight:800;color:#0b5ed7;font-size:15px">แพ็กเกจ ${esc(p.name)}</div>
+        <div style="font-size:12px;color:#64748b;margin-top:2px">จำกัดสิทธิ์เฉพาะลูกค้าที่สั่งซื้อเท่านั้น</div>
+      </div>
+      <p class="hint" style="text-align:center;margin:12px 0 0">หากสั่งซื้อแพ็กเกจนี้แล้ว กรุณาติดต่อร้านเพื่อดำเนินการต่อ</p>`;
   } else {
     form = `
       <div style="margin-top:10px;padding:10px 12px;border-radius:12px;background:#f1f5f9;text-align:left">
