@@ -3247,12 +3247,24 @@ async function submitPayment() {
     }
     const cpOff = state.coupon ? Number(state.coupon.couponValue) || 0 : 0;
     const amount = firstPriceOf(state.pkg) - shopDiscountInfo(state.pkg).amount - cpOff;
+    // อัปโหลดสลิปที่ลูกค้าแนบ เพื่อส่งให้ร้านและลูกค้าเห็นใน LINE
+    let slipUrl = "";
+    if (file) {
+      try {
+        const img = await normalizeSlipImage(file);
+        const fd = new FormData();
+        fd.append("file", img, "slip.jpg");
+        const up = await fetch(API_BASE + "/upload-confirm", { method: "POST", body: fd });
+        const ud = await up.json().catch(() => ({}));
+        if (up.ok && ud.url) slipUrl = ud.url;
+      } catch (e) { /* อัปโหลดสลิปไม่ได้ ก็ยังสั่งซื้อได้ */ }
+    }
     const created = await postJSON(CONFIG.BACKEND_ENDPOINT, {
       serial: state.serial, phone: state.phone,
       package: state.pkg, amount, time: new Date().toISOString(),
       couponCode: state.coupon ? state.coupon.code : "",
       lineUserId: state.lineUser ? state.lineUser.userId : "",
-      shipping: state.shipping || (state.netCarrier ? { carrier: state.netCarrier } : null),
+      shipping: { ...(state.shipping || (state.netCarrier ? { carrier: state.netCarrier } : {})), slipImg: slipUrl },
       slipRef: check && check.ref ? check.ref : ""
     });
     if (created && created.error) {
