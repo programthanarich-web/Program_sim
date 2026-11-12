@@ -3231,6 +3231,15 @@ async function submitPayment() {
     }
     return;
   }
+  // ต้องเป็นเพื่อนกับร้านก่อน ร้านจึงจะส่งสถานะเข้าแชทได้
+  try {
+    const fs = await liff.getFriendship();
+    if (fs && fs.friendFlag === false) {
+      err.textContent = "กรุณาเพิ่มเพื่อนกับร้านใน LINE ก่อน (กดปุ่ม ติดต่อร้าน ด้านบนแล้วกดเพิ่มเพื่อน) จากนั้นกดชำระเงินอีกครั้ง";
+      err.style.display = "block";
+      return;
+    }
+  } catch (e) { /* ตรวจไม่ได้ก็ให้ดำเนินการต่อ */ }
   // โหมดทดสอบ (ปิดการตรวจสลิปจากหลังบ้าน) ไม่ต้องแนบสลิป
   const slipOn = CONFIG.SLIP_CHECK !== false;
   const slipInput = document.getElementById("slip");
