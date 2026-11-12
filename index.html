@@ -3091,11 +3091,8 @@ function animatePendingMeter(pct) {
 
 function showPending(orderNo, cur = 1) {
   hero.classList.add("hidden");
-  // ปุ่มนี้เปิดแชท LINE พร้อมข้อความเลขคำสั่งซื้อให้กดส่งทันที เพื่อให้ร้านผูกแชทกับคำสั่งซื้อและส่งสถานะให้ทาง LINE
-  const oaBase = CONFIG.lineContactUrl ? CONFIG.lineContactUrl.replace("/R/ti/p/", "/R/oaMessage/") : "";
-  const linkHref = orderNo && oaBase.includes("/R/oaMessage/") ? `${oaBase}/?${encodeURIComponent(orderNo)}` : CONFIG.lineContactUrl;
   const contact = CONFIG.lineContactUrl
-    ? `<a class="btn" href="${linkHref}" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;background:#06c755;margin-top:10px">💬 ${orderNo ? "รับสถานะทาง LINE (กดส่งในแชท)" : "ติดต่อร้านผ่าน LINE"}</a>`
+    ? `<a class="btn" href="${CONFIG.lineContactUrl}" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;background:#06c755;margin-top:10px">💬 ติดต่อร้านผ่าน LINE</a>`
     : "";
   render(`
     <div class="card result" id="pendingBox">
