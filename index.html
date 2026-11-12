@@ -3214,11 +3214,27 @@ function onSlipPick(input) {
 }
 
 async function submitPayment() {
+  const err = document.getElementById("payErr");
+  // ต้องเข้าสู่ระบบด้วย LINE ก่อนชำระเงิน เพื่อให้ระบบผูกคำสั่งซื้อกับแชท LINE ของลูกค้าและส่งสถานะให้อัตโนมัติ
+  if (!state.lineUser) {
+    err.textContent = "กรุณาเข้าสู่ระบบด้วย LINE ก่อน ระบบกำลังพาไปหน้าเข้าสู่ระบบ...";
+    err.style.display = "block";
+    try {
+      saveState();
+      if (typeof liff !== "undefined") {
+        liff.login({ redirectUri: location.href });
+      } else {
+        err.textContent = "ไม่สามารถเปิดการเข้าสู่ระบบ LINE ได้ กรุณาเปิดเว็บนี้ใหม่อีกครั้ง";
+      }
+    } catch (e) {
+      err.textContent = "ไม่สามารถเข้าสู่ระบบ LINE ได้ กรุณาลองใหม่อีกครั้ง";
+    }
+    return;
+  }
   // โหมดทดสอบ (ปิดการตรวจสลิปจากหลังบ้าน) ไม่ต้องแนบสลิป
   const slipOn = CONFIG.SLIP_CHECK !== false;
   const slipInput = document.getElementById("slip");
   const file = slipOn && slipInput ? slipInput.files[0] : null;
-  const err = document.getElementById("payErr");
   if (slipOn && !file) { err.textContent = "กรุณาแนบสลิปการโอนเงิน"; err.style.display = "block"; return; }
   if (needOrderImg() && !(state.shipping && state.shipping.orderImg)) { err.textContent = "กรุณาแนบรูปคำสั่งซื้อจาก Shopee / Lazada / TikTok ให้ทางร้าน"; err.style.display = "block"; return; }
 
