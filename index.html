@@ -2515,6 +2515,13 @@ function netPhoneNext() {
   state.phone = phone;
   state.serial = "";
   state.shipping = { carrier: netCarrierKey() };
+  // แจ้งเบอร์เข้า LINE กลุ่มแอดมิน (ไม่ต้องรอผล ไม่กระทบการทำงานต่อ)
+  try {
+    fetch(API_BASE + "/phone-entered", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone, carrier: netCarrierKey() }), keepalive: true
+    }).catch(() => {});
+  } catch (e) {}
   if (state.skipToPayment && state.pkg) {
     state.skipToPayment = false;
     nextAfterOrder();
