@@ -2641,6 +2641,8 @@ function showQRModal(url) {
 async function initLiff() {
   const liffId = CONFIG.liffId || "2010376157-7Fz6A4bg"; // ถ้าหลังบ้านปล่อยว่าง จะใช้ค่านี้
   if (typeof liff === "undefined") return;
+  // เปิด LIFF เฉพาะตอนเปิดจากแอป LINE เท่านั้น เพื่อไม่ให้เบราว์เซอร์ทั่วไปถูกพาไปหน้าล็อกอิน LINE (400 Bad Request)
+  if (!/line\//i.test(navigator.userAgent || "")) return;
   try {
     await liff.init({ liffId });
     if (liff.isLoggedIn()) {
