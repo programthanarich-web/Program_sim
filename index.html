@@ -1042,6 +1042,11 @@ function go(screen) { highlightKey = ""; history_.push(screen); saveState(); ren
 function goBack()   { if (history_.length > 1) history_.pop(); saveState(); render(); window.scrollTo(0, 0); }
 function resetTo(screen) { history_ = ["home"]; if (screen !== "home") history_.push(screen); saveState(); render(); window.scrollTo(0, 0); }
 // กลับไปหน้าเลือกแพ็กเกจเน็ตของเครือข่ายเดิม (ไม่ต้องเลือกเครือข่ายใหม่)
+// คัดลอกรหัสสมัครเน็ต แล้วเปิดหน้าโทรออกของมือถือพร้อมรหัสที่กรอกไว้แล้ว
+function dialSignupCode(code) {
+  try { if (navigator.clipboard) navigator.clipboard.writeText(code).catch(() => {}); } catch (e) {}
+  window.location.href = "tel:" + encodeURIComponent(code);
+}
 function chooseOtherPackage() { history_ = ["home", "net-carrier", "packages"]; highlightKey = ""; saveState(); render(); window.scrollTo(0, 0); }
 
 /* ==========================================================
@@ -2341,6 +2346,7 @@ const screens = {
           <small>รหัสสมัครเน็ต</small>
           <div class="code">${p.code}</div>
         </div>` : ""}
+        ${p.code ? `<button class="btn" style="margin-top:10px" onclick="dialSignupCode('${p.code}')">คัดลอกรหัสและโทรออก</button>` : ""}
         <button class="btn" style="margin-top:10px" onclick="chooseOtherPackage()">เลือกแพ็กเกจอื่น</button>
         <button class="btn ghost" style="margin-top:10px" onclick="resetTo('home')">กลับหน้าหลัก</button>
       </div>`;
