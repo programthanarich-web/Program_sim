@@ -961,6 +961,24 @@ function shopDiscountInfo(p) {
 }
 
 // การ์ดแพ็กเกจ (ใช้ทั้งเมนูเดือนแรกและเมนูเดือนที่ 2)
+// แสดงแพ็กเกจแยกตามหมวดหมู่ที่ตั้งไว้ในหลังบ้าน (ตามลำดับหมวด) แพ็กเกจที่ไม่มีหมวดจะอยู่กลุ่ม "อื่น ๆ"
+function groupedPlanHtml(pool, action = "selectPackage") {
+  const car = netCarrierKey();
+  const cats = (CONFIG.PACKAGE_CATEGORIES || []).filter(c => (c.carrier || "truemove H") === car);
+  if (!cats.length) return planCardsHtml(pool, action);
+  const title = t => `<div style="font-weight:800;font-size:15px;color:#0f172a;margin:16px 4px 6px">${esc(t)}</div>`;
+  const used = new Set();
+  let html = "";
+  cats.forEach(c => {
+    const list = pool.filter(p => p.category === c.id);
+    list.forEach(p => used.add(p));
+    if (list.length) html += title(c.name) + planCardsHtml(list, action);
+  });
+  const rest = pool.filter(p => !used.has(p));
+  if (rest.length) html += title("อื่น ๆ") + planCardsHtml(rest, action);
+  return html;
+}
+
 function planCardsHtml(list, action = "selectPackage") {
   const isShop = state.mode === "shop";
   const cards = list.map(p => {
@@ -2280,7 +2298,7 @@ const screens = {
     hero.classList.add("hidden");
     return `
       <div class="card">
-        ${planCardsHtml(PACKAGES.filter(p => !p.month2 && !p.simAge && carrierOf(p) === netCarrierKey()), "selectNetPackage")}
+        ${groupedPlanHtml(PACKAGES.filter(p => !p.month2 && !p.simAge && carrierOf(p) === netCarrierKey()), "selectNetPackage")}
         <button class="btn ghost" style="margin-top:12px" onclick="goBack()">ย้อนกลับ</button>
       </div>`;
   },
@@ -2346,7 +2364,7 @@ const screens = {
           <small>รหัสสมัครเน็ต</small>
           <div class="code">${p.code}</div>
         </div>` : ""}
-        ${p.code ? `<button class="btn" style="margin-top:10px" onclick="dialSignupCode('${p.code}')">คัดลอกรหัสและโทรออก</button>` : ""}
+        ${p.code ? `<button class="btn" style="margin-top:10px" onclick="dialSignupCode('${p.code}')">สมัครแพ็คเกจเน็ต</button>` : ""}
         <button class="btn" style="margin-top:10px" onclick="chooseOtherPackage()">เลือกแพ็กเกจอื่น</button>
         <button class="btn ghost" style="margin-top:10px" onclick="resetTo('home')">กลับหน้าหลัก</button>
       </div>`;
