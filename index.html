@@ -451,7 +451,7 @@
 const API_BASE = "https://program-api.programthanarich.workers.dev";
 
 const CONFIG = {
-  liffId: "2010376157-7Fz6A4bg", // LIFF ID ของ ProgramThanaRich (ถ้าหลังบ้านตั้งค่าไว้ จะใช้ค่าจากหลังบ้านแทน)
+  liffId: "2010376157-slsJdcUE", // LIFF ID ของ ProgramThanaRich (LINE Login channel ใต้ Provider Programthanarich) ถ้าหลังบ้านตั้งค่าไว้ จะใช้ค่าจากหลังบ้านแทน
   // LINE Notify ปิดให้บริการแล้ว (31 มี.ค. 2568) ควรใช้ LINE Messaging API ฝั่งเซิร์ฟเวอร์แทน
   LINE_ENDPOINT: API_BASE + "/line",
   BACKEND_ENDPOINT: API_BASE + "/orders",        // ส่งข้อมูลการชำระเงินเข้าระบบหลังบ้าน
@@ -2639,7 +2639,7 @@ function showQRModal(url) {
 
 // LINE LIFF: เปิดเว็บจากแอป LINE ได้ ถ้ายังไม่ได้ใส่ LIFF ID ในหลังบ้าน ระบบจะทำงานเป็นเว็บปกติ
 async function initLiff() {
-  const liffId = CONFIG.liffId || "2010376157-7Fz6A4bg"; // ถ้าหลังบ้านปล่อยว่าง จะใช้ค่านี้
+  const liffId = CONFIG.liffId || "2010376157-slsJdcUE"; // ถ้าหลังบ้านปล่อยว่าง จะใช้ค่านี้
   if (typeof liff === "undefined") return;
   // เปิด LIFF เฉพาะตอนเปิดจากแอป LINE เท่านั้น เพื่อไม่ให้เบราว์เซอร์ทั่วไปถูกพาไปหน้าล็อกอิน LINE (400 Bad Request)
   if (!/line\//i.test(navigator.userAgent || "")) return;
